@@ -27,10 +27,14 @@ local BG = Color3.fromRGB(15, 15, 15)
 local BG_MISC = Color3.fromRGB(10, 10, 10)
 local DIV = Color3.fromRGB(29, 29, 29)
 local TEXT = Color3.fromRGB(232, 232, 232)
-local ACCENT = Color3.fromRGB(61, 232, 127)
+local TEXT_DIM = Color3.fromRGB(165, 165, 165)
+local TEXT_FAINT = Color3.fromRGB(110, 110, 110)
+local ICON_DIM = Color3.fromRGB(130, 130, 130)
+local ICON_ON = Color3.fromRGB(235, 235, 235)
 local PILL = Color3.fromRGB(36, 36, 36)
 local HOVER = Color3.fromRGB(22, 22, 22)
 local STROKE = Color3.fromRGB(38, 38, 38)
+local OPT_BG = Color3.fromRGB(19, 19, 19)
 local family = "rbxasset://fonts/families/GothamSSm.json"
 local F_Med = Font.new(family, Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 local F_Reg = Font.new(family, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
@@ -55,10 +59,18 @@ end
 local function corner(p, r)
 	return create("UICorner", { CornerRadius = UDim.new(0, r or 6) }, p)
 end
-local function tween(i, props, t)
-	local tw = TweenService:Create(i, TweenInfo.new(t or 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
+local function tween(i, props, t, style, dir)
+	local tw = TweenService:Create(i, TweenInfo.new(t or 0.15, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), props)
 	tw:Play()
 	return tw
+end
+local function pop(frame, s)
+	local sc = frame:FindFirstChildOfClass("UIScale")
+	if not sc then
+		sc = create("UIScale", { Scale = 0.96 }, frame)
+	end
+	sc.Scale = s or 0.96
+	tween(sc, { Scale = 1 }, 0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
 local function dragify(handle, frame)
 	local dragging = false
@@ -82,18 +94,163 @@ local function dragify(handle, frame)
 		end
 	end)
 end
-local ICONS = {
-	Combat = "☄",
-	Render = "◉",
-	Utility = "✕",
-	World = "⊕",
-	Inventory = "▤",
-	Minigames = "♞",
-	Other = "⧉",
-	Friends = "",
-	Profiles = "",
-	Macros = ""
-}
+local function assetId(value)
+	if type(value) == "number" then
+		return "rbxassetid://" .. tostring(math.floor(value))
+	end
+	if type(value) == "string" then
+		local digits = value:match("^%s*(%d+)%s*$")
+		if digits then
+			return "rbxassetid://" .. digits
+		end
+		if value:match("^rbxassetid://") or value:match("^rbxasset://") or value:match("^https?://") then
+			return value
+		end
+	end
+	return nil
+end
+local function buildIcon(parent, value, size)
+	local asset = assetId(value)
+	if not asset then
+		return nil
+	end
+	local s = size or 16
+	local holder = create("Frame", {
+		Name = "Icon",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(s, s)
+	}, parent)
+	create("ImageLabel", {
+		Name = "Glyph",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Image = asset,
+		ImageColor3 = ICON_DIM,
+		ScaleType = Enum.ScaleType.Fit
+	}, holder)
+	return holder
+end
+local function tintIcon(holder, color, t)
+	if not holder then return end
+	for _, d in ipairs(holder:GetDescendants()) do
+		if d:IsA("ImageLabel") then
+			tween(d, { ImageColor3 = color }, t or 0.18)
+		end
+	end
+end
+local function bar(parent, size, pos, color)
+	return create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = size,
+		Position = pos,
+		BackgroundColor3 = color,
+		BorderSizePixel = 0
+	}, parent)
+end
+local function diag(parent, cx, cy, len, thick, color, rot)
+	local f = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(len, thick),
+		Position = UDim2.fromOffset(cx, cy),
+		Rotation = rot,
+		BackgroundColor3 = color,
+		BorderSizePixel = 0
+	}, parent)
+	return f
+end
+local function drawChevron(parent, color)
+	local h = create("Frame", {
+		Name = "Chev",
+		Size = UDim2.fromOffset(12, 12),
+		BackgroundTransparency = 1
+	}, parent)
+	diag(h, 6, 6, 7, 1.6, color or Color3.fromRGB(95, 95, 95), -45)
+	local b = diag(h, 6, 6, 7, 1.6, color or Color3.fromRGB(95, 95, 95), 45)
+	b.Position = UDim2.fromOffset(6, 8)
+	return h
+end
+local function drawCaret(parent, color)
+	local h = create("Frame", {
+		Name = "Caret",
+		Size = UDim2.fromOffset(14, 14),
+		BackgroundTransparency = 1
+	}, parent)
+	diag(h, 5, 7, 7, 1.6, color or Color3.fromRGB(120, 120, 120), -45)
+	diag(h, 9, 7, 7, 1.6, color or Color3.fromRGB(120, 120, 120), 45)
+	return h
+end
+local function drawGear(parent, color)
+	local c = color or Color3.fromRGB(140, 140, 140)
+	local h = create("Frame", {
+		Name = "Gear",
+		Size = UDim2.fromOffset(20, 20),
+		BackgroundTransparency = 1
+	}, parent)
+	bar(h, UDim2.fromOffset(14, 1.6), UDim2.fromOffset(10, 10), c)
+	bar(h, UDim2.fromOffset(1.6, 14), UDim2.fromOffset(10, 10), c)
+	diag(h, 10, 10, 13, 1.6, c, 45)
+	diag(h, 10, 10, 13, 1.6, c, -45)
+	local ring = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(9, 9),
+		Position = UDim2.fromOffset(10, 10),
+		BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+		BorderSizePixel = 0
+	}, h)
+	corner(ring, 9)
+	create("UIStroke", { Color = c, Thickness = 1.6, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, ring)
+	return h
+end
+local function drawPerson(parent, color)
+	local c = color or Color3.fromRGB(150, 150, 150)
+	local h = create("Frame", {
+		Name = "User",
+		Size = UDim2.fromOffset(18, 18),
+		BackgroundTransparency = 1
+	}, parent)
+	local head = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Size = UDim2.fromOffset(7, 7),
+		Position = UDim2.new(0.5, 0, 0, 1),
+		BackgroundColor3 = c,
+		BorderSizePixel = 0
+	}, h)
+	corner(head, 7)
+	local body = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Size = UDim2.fromOffset(14, 7),
+		Position = UDim2.new(0.5, 0, 1, -1),
+		BackgroundColor3 = c,
+		BorderSizePixel = 0
+	}, h)
+	corner(body, 4)
+	return h
+end
+local function drawHamburger(parent, color)
+	local c = color or Color3.fromRGB(150, 150, 150)
+	local h = create("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(14, 12)
+	}, parent)
+	bar(h, UDim2.fromOffset(12, 1.6), UDim2.fromOffset(7, 2), c)
+	bar(h, UDim2.fromOffset(12, 1.6), UDim2.fromOffset(7, 6), c)
+	bar(h, UDim2.fromOffset(12, 1.6), UDim2.fromOffset(7, 10), c)
+	return h
+end
+local function drawSliders(parent, color)
+	local c = color or Color3.fromRGB(150, 150, 150)
+	local h = create("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(14, 12)
+	}, parent)
+	bar(h, UDim2.fromOffset(12, 1.5), UDim2.fromOffset(7, 2), c)
+	bar(h, UDim2.fromOffset(12, 1.5), UDim2.fromOffset(7, 10), c)
+	local k1 = bar(h, UDim2.fromOffset(4, 4), UDim2.fromOffset(4, 2), c)
+	corner(k1, 2)
+	local k2 = bar(h, UDim2.fromOffset(4, 4), UDim2.fromOffset(10, 10), c)
+	corner(k2, 2)
+	return h
+end
 local function dotsIndicator(parent, color)
 	local h = create("Frame", {
 		Name = "Dots",
@@ -137,6 +294,8 @@ function UILib:Window(config)
 	}, gui)
 	corner(main, 6)
 	create("UIStroke", { Color = STROKE, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, main)
+	create("UIScale", { Scale = 1 }, main)
+	pop(main, 0.95)
 	local head = create("Frame", {
 		Name = "Header",
 		Size = UDim2.new(1, 0, 0, HEAD_H),
@@ -152,22 +311,26 @@ function UILib:Window(config)
 		TextSize = 20,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = Color3.fromRGB(255, 255, 255),
-		Text = 'VAPE<font color="rgb(61,232,127)"> V4</font>'
+		Text = 'VAPE<font color="rgb(150,150,150)"> V4</font>'
 	}, head)
-	local gear = create("TextButton", {
+	local gearBtn = create("TextButton", {
 		Name = "Settings",
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -14, 0.5, 0),
 		Size = UDim2.fromOffset(28, 28),
 		BackgroundTransparency = 1,
-		FontFace = F_Reg,
-		TextSize = 18,
-		TextColor3 = Color3.fromRGB(140, 140, 140),
-		Text = "⚙",
+		Text = "",
 		AutoButtonColor = false
 	}, head)
-	gear.MouseEnter:Connect(function() gear.TextColor3 = TEXT end)
-	gear.MouseLeave:Connect(function() gear.TextColor3 = Color3.fromRGB(140, 140, 140) end)
+	local gearIcon = drawGear(gearBtn, Color3.fromRGB(140, 140, 140))
+	gearIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	gearIcon.Position = UDim2.fromScale(0.5, 0.5)
+	gearBtn.MouseEnter:Connect(function()
+		tween(gearIcon, { Rotation = 40 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	end)
+	gearBtn.MouseLeave:Connect(function()
+		tween(gearIcon, { Rotation = 0 }, 0.25)
+	end)
 	create("Frame", {
 		Name = "Div",
 		Size = UDim2.new(1, 0, 0, 1),
@@ -197,38 +360,38 @@ function UILib:Window(config)
 		Position = UDim2.new(0, 0, 1, -47),
 		BackgroundTransparency = 1
 	}, main)
-	create("TextButton", {
-		Position = UDim2.fromOffset(16, 0),
-		Size = UDim2.fromOffset(30, 47),
+	local userBtn = create("TextButton", {
+		Position = UDim2.fromOffset(12, 0),
+		Size = UDim2.fromOffset(34, 47),
 		BackgroundTransparency = 1,
-		Text = "●",
-		FontFace = F_Reg,
-		TextSize = 16,
-		TextColor3 = Color3.fromRGB(150, 150, 150),
+		Text = "",
 		AutoButtonColor = false
 	}, foot)
-	create("TextButton", {
+	local userIcon = drawPerson(userBtn, Color3.fromRGB(150, 150, 150))
+	userIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	userIcon.Position = UDim2.fromScale(0.5, 0.5)
+	local sBtn = create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -40, 0.5, 0),
 		Size = UDim2.fromOffset(24, 24),
 		BackgroundTransparency = 1,
-		Text = "✦",
-		TextSize = 14,
-		FontFace = F_Reg,
-		TextColor3 = Color3.fromRGB(150, 150, 150),
+		Text = "",
 		AutoButtonColor = false
 	}, foot)
-	create("TextButton", {
+	local sIcon = drawSliders(sBtn, Color3.fromRGB(150, 150, 150))
+	sIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	sIcon.Position = UDim2.fromScale(0.5, 0.5)
+	local mBtn = create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -14, 0.5, 0),
 		Size = UDim2.fromOffset(24, 24),
 		BackgroundTransparency = 1,
-		Text = "☰",
-		TextSize = 14,
-		FontFace = F_Reg,
-		TextColor3 = Color3.fromRGB(150, 150, 150),
+		Text = "",
 		AutoButtonColor = false
 	}, foot)
+	local mIcon = drawHamburger(mBtn, Color3.fromRGB(150, 150, 150))
+	mIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+	mIcon.Position = UDim2.fromScale(0.5, 0.5)
 	dragify(head, main)
 	self.gui = gui
 	self.main = main
@@ -236,14 +399,19 @@ function UILib:Window(config)
 	self._navCount = 0
 	self._miscBuilt = false
 	self.toggleKey = config.toggleKey or Enum.KeyCode.RightShift
-	local function fitMain()
+	local function fitMain(animate)
 		local h = HEAD_H + 48
 		for _, child in ipairs(listHolder:GetChildren()) do
 			if child:IsA("GuiObject") then
 				h = h + child.Size.Y.Offset
 			end
 		end
-		main.Size = UDim2.fromOffset(NAV_W, h)
+		local target = UDim2.fromOffset(NAV_W, h)
+		if animate then
+			tween(main, { Size = target }, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		else
+			main.Size = target
+		end
 	end
 	local function buildMiscLabel()
 		if self._miscBuilt then return end
@@ -274,10 +442,10 @@ function UILib:Window(config)
 			FontFace = F_Bold,
 			TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			TextColor3 = Color3.fromRGB(110, 110, 110),
+			TextColor3 = TEXT_FAINT,
 			Text = "MISC"
 		}, wrap)
-		fitMain()
+		fitMain(false)
 	end
 	function self:Page(nameOrConfig, iconOverride)
 		local cfg = {}
@@ -297,28 +465,25 @@ function UILib:Window(config)
 		local entry = create("TextButton", {
 			Name = name .. "Entry",
 			Size = UDim2.new(1, 0, 0, NAV_H),
+			BackgroundColor3 = HOVER,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			Text = "",
 			AutoButtonColor = false,
 			LayoutOrder = order
 		}, listHolder)
-		local hasIcon = not isMisc
-		local iconChar = cfg.icon or ICONS[name] or ""
-		if type(iconChar) == "number" then
-			iconChar = ""
-		end
-		local iconLbl
+		local iconAsset = assetId(cfg.icon)
+		local hasIcon = iconAsset ~= nil
+		local entryIconHolder
+		local entryIcon
 		if hasIcon then
-			iconLbl = create("TextLabel", {
-				Position = UDim2.fromOffset(17, 0),
-				Size = UDim2.fromOffset(18, NAV_H),
-				BackgroundTransparency = 1,
-				FontFace = F_Bold,
-				TextSize = 15,
-				TextColor3 = Color3.fromRGB(170, 170, 170),
-				Text = tostring(iconChar)
+			entryIconHolder = create("Frame", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 17, 0.5, 0),
+				Size = UDim2.fromOffset(16, 16),
+				BackgroundTransparency = 1
 			}, entry)
+			entryIcon = buildIcon(entryIconHolder, iconAsset, 16)
 		end
 		local titleLbl = create("TextLabel", {
 			Position = hasIcon and UDim2.fromOffset(42, 0) or UDim2.fromOffset(16, 0),
@@ -330,16 +495,13 @@ function UILib:Window(config)
 			TextColor3 = Color3.fromRGB(205, 205, 205),
 			Text = name
 		}, entry)
-		create("TextLabel", {
+		local chevHolder = create("Frame", {
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -16, 0.5, 0),
-			Size = UDim2.fromOffset(12, NAV_H),
-			BackgroundTransparency = 1,
-			FontFace = F_Reg,
-			TextSize = 16,
-			TextColor3 = Color3.fromRGB(95, 95, 95),
-			Text = "›"
+			Position = UDim2.new(1, -14, 0.5, 0),
+			Size = UDim2.fromOffset(12, 12),
+			BackgroundTransparency = 1
 		}, entry)
+		drawChevron(chevHolder, Color3.fromRGB(95, 95, 95))
 		create("Frame", {
 			Size = UDim2.new(1, 0, 0, 1),
 			Position = UDim2.new(0, 0, 1, -1),
@@ -366,16 +528,21 @@ function UILib:Window(config)
 				Text = tostring(cfg.tag)
 			}, pill)
 		end
+		local startPos = UDim2.new(0.5, 6, 0.5, -300)
+		if main and main.Position then
+			startPos = UDim2.new(0.5, 6, main.Position.Y.Scale, main.Position.Y.Offset)
+		end
 		local cat = create("Frame", {
 			Name = name .. "Panel",
 			Size = UDim2.fromOffset(CAT_W, CAT_HEAD_H + 40),
-			Position = UDim2.new(0.5, 6, 0.5, -300),
+			Position = startPos,
 			BackgroundColor3 = BG,
 			BorderSizePixel = 0,
 			Visible = false
 		}, gui)
 		corner(cat, 6)
 		create("UIStroke", { Color = STROKE, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, cat)
+		create("UIScale", { Scale = 1 }, cat)
 		local catHead = create("TextButton", {
 			Name = "Head",
 			Size = UDim2.new(1, 0, 0, CAT_HEAD_H),
@@ -384,15 +551,13 @@ function UILib:Window(config)
 			AutoButtonColor = false
 		}, cat)
 		if hasIcon then
-			create("TextLabel", {
-				Position = UDim2.fromOffset(16, 0),
-				Size = UDim2.fromOffset(18, CAT_HEAD_H),
-				BackgroundTransparency = 1,
-				FontFace = F_Bold,
-				TextSize = 15,
-				TextColor3 = Color3.fromRGB(200, 200, 200),
-				Text = tostring(iconChar)
+			local ch = create("Frame", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 16, 0.5, 0),
+				Size = UDim2.fromOffset(16, 16),
+				BackgroundTransparency = 1
 			}, catHead)
+			buildIcon(ch, iconAsset, 16)
 		end
 		create("TextLabel", {
 			Position = UDim2.fromOffset(hasIcon and 42 or 16, 0),
@@ -404,16 +569,13 @@ function UILib:Window(config)
 			TextColor3 = TEXT,
 			Text = name
 		}, catHead)
-		local caretLbl = create("TextLabel", {
+		local caretHolder = create("Frame", {
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -16, 0.5, 0),
-			Size = UDim2.fromOffset(16, CAT_HEAD_H),
-			BackgroundTransparency = 1,
-			FontFace = F_Reg,
-			TextSize = 15,
-			TextColor3 = Color3.fromRGB(120, 120, 120),
-			Text = "︿"
+			Position = UDim2.new(1, -14, 0.5, 0),
+			Size = UDim2.fromOffset(14, 14),
+			BackgroundTransparency = 1
 		}, catHead)
+		local caret = drawCaret(caretHolder, Color3.fromRGB(120, 120, 120))
 		create("Frame", {
 			Size = UDim2.new(1, 0, 0, 1),
 			Position = UDim2.fromOffset(0, CAT_HEAD_H - 1),
@@ -438,7 +600,7 @@ function UILib:Window(config)
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			Padding = UDim.new(0, 2)
 		}, catList)
-		local function fitCat()
+		local function fitCat(animate)
 			if collapsed then return end
 			local h = CAT_HEAD_H + 12
 			for _, c in ipairs(catList:GetChildren()) do
@@ -446,25 +608,29 @@ function UILib:Window(config)
 					h = h + c.Size.Y.Offset + 2
 				end
 			end
-			cat.Size = UDim2.fromOffset(CAT_W, h)
-			local mp = main.Position
-			cat.Position = UDim2.new(0.5, 6, mp.Y.Scale, mp.Y.Offset)
+			local target = UDim2.fromOffset(CAT_W, h)
+			if animate then
+				tween(cat, { Size = target }, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			else
+				cat.Size = target
+			end
 		end
 		catHead.MouseButton1Click:Connect(function()
 			collapsed = not collapsed
 			catList.Visible = not collapsed
-			caretLbl.Text = collapsed and "﹀" or "︿"
+			tween(caret, { Rotation = collapsed and 180 or 0 }, 0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			if collapsed then
-				cat.Size = UDim2.fromOffset(CAT_W, CAT_HEAD_H)
+				tween(cat, { Size = UDim2.fromOffset(CAT_W, CAT_HEAD_H) }, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 			else
-				fitCat()
+				fitCat(true)
+				pop(cat, 0.98)
 			end
 		end)
 		local page = {}
 		page.name = name
 		page.entry = entry
 		page.titleLbl = titleLbl
-		page.iconLbl = iconLbl
+		page.entryIcon = entryIcon
 		page.panel = cat
 		page.list = catList
 		page._count = 0
@@ -510,10 +676,13 @@ function UILib:Window(config)
 				Name = "Row",
 				Size = UDim2.new(1, 0, 0, MOD_H - 6),
 				Position = UDim2.fromOffset(0, 0),
+				BackgroundColor3 = HOVER,
 				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
 				Text = "",
 				AutoButtonColor = false
 			}, wrap)
+			corner(row, 5)
 			local t = create("TextLabel", {
 				Position = UDim2.fromOffset(16, 0),
 				Size = UDim2.new(1, -50, 1, 0),
@@ -536,19 +705,26 @@ function UILib:Window(config)
 			dh.Position = UDim2.fromScale(0.5, 0.5)
 			dh.AnchorPoint = Vector2.new(0.5, 0.5)
 			row.MouseEnter:Connect(function()
-				tween(row, { BackgroundColor3 = HOVER, BackgroundTransparency = 0 }, 0.12)
-				if row.BackgroundTransparency ~= 0 then
-					row.BackgroundTransparency = 0
-				end
+				tween(row, { BackgroundTransparency = 0 }, 0.15)
+				tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.15)
+				tween(dh, { Rotation = 90 }, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			end)
 			row.MouseLeave:Connect(function()
-				tween(row, { BackgroundTransparency = 1 }, 0.12)
+				tween(row, { BackgroundTransparency = 1 }, 0.15)
+				tween(dh, { Rotation = 0 }, 0.2)
+			end)
+			row.MouseButton1Down:Connect(function()
+				tween(t, { Position = UDim2.fromOffset(18, 0) }, 0.08)
+			end)
+			row.MouseButton1Up:Connect(function()
+				tween(t, { Position = UDim2.fromOffset(16, 0) }, 0.12, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			end)
 			local opts = create("Frame", {
 				Name = "Options",
 				Size = UDim2.new(1, -24, 0, 0),
 				Position = UDim2.new(0, 12, 0, MOD_H - 4),
-				BackgroundColor3 = Color3.fromRGB(19, 19, 19),
+				BackgroundColor3 = OPT_BG,
+				BackgroundTransparency = 0,
 				BorderSizePixel = 0,
 				Visible = false,
 				AutomaticSize = Enum.AutomaticSize.Y
@@ -562,34 +738,53 @@ function UILib:Window(config)
 				PaddingRight = UDim.new(0, 8)
 			}, opts)
 			local expanded = false
-			local function refreshWrap()
+			local function refreshWrap(animate)
+				local target
 				if expanded then
-					wrap.Size = UDim2.new(1, 0, 0, (MOD_H - 4) + opts.AbsoluteSize.Y + 8)
+					target = UDim2.new(1, 0, 0, (MOD_H - 4) + opts.AbsoluteSize.Y + 8)
 				else
-					wrap.Size = UDim2.new(1, 0, 0, MOD_H)
+					target = UDim2.new(1, 0, 0, MOD_H)
 				end
-				task.defer(fitCat)
+				if animate then
+					tween(wrap, { Size = target }, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+				else
+					wrap.Size = target
+				end
+				task.defer(function() fitCat(true) end)
 			end
-			opts:GetPropertyChangedSignal("AbsoluteSize"):Connect(refreshWrap)
+			opts:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() refreshWrap(false) end)
 			local function setExpanded(v)
 				expanded = v
-				opts.Visible = v
-				refreshWrap()
+				if v then
+					opts.Visible = true
+					opts.BackgroundTransparency = 1
+					tween(opts, { BackgroundTransparency = 0 }, 0.2)
+					tween(dh, { Rotation = 90 }, 0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+				else
+					local tw = tween(opts, { BackgroundTransparency = 1 }, 0.15)
+					tween(dh, { Rotation = 0 }, 0.2)
+					task.delay(0.15, function()
+						if not expanded then
+							opts.Visible = false
+						end
+					end)
+				end
+				refreshWrap(true)
 			end
 			dotsBtn.MouseButton1Click:Connect(function() setExpanded(not expanded) end)
 			local enabled = false
 			row.MouseButton1Click:Connect(function()
 				enabled = not enabled
 				if enabled then
-					t.TextColor3 = Color3.fromRGB(255, 255, 255)
+					tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.15)
 				else
-					t.TextColor3 = Color3.fromRGB(205, 205, 205)
+					tween(t, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.15)
 				end
 				if mc.callback then
 					mc.callback(enabled)
 				end
 			end)
-			fitCat()
+			fitCat(false)
 			local mod = {}
 			mod.row = row
 			mod.title = t
@@ -612,7 +807,7 @@ function UILib:Window(config)
 					TextColor3 = Color3.fromRGB(180, 180, 180),
 					Text = title or ""
 				}, f)
-				task.defer(refreshWrap)
+				task.defer(function() refreshWrap(false) end)
 				return f
 			end
 			function mod:Toggle(cfg)
@@ -623,7 +818,7 @@ function UILib:Window(config)
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, 0, 0.5, 0),
 					Size = UDim2.fromOffset(34, 18),
-					BackgroundColor3 = val and ACCENT or Color3.fromRGB(50, 50, 50),
+					BackgroundColor3 = val and TEXT or Color3.fromRGB(50, 50, 50),
 					Text = "",
 					AutoButtonColor = false
 				}, f)
@@ -631,14 +826,15 @@ function UILib:Window(config)
 				local knob = create("Frame", {
 					Size = UDim2.fromOffset(12, 12),
 					Position = val and UDim2.fromOffset(19, 3) or UDim2.fromOffset(3, 3),
-					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+					BackgroundColor3 = val and Color3.fromRGB(10, 10, 10) or Color3.fromRGB(255, 255, 255),
 					BorderSizePixel = 0
 				}, tr)
 				corner(knob, 6)
 				tr.MouseButton1Click:Connect(function()
 					val = not val
-					tr.BackgroundColor3 = val and ACCENT or Color3.fromRGB(50, 50, 50)
-					knob.Position = val and UDim2.fromOffset(19, 3) or UDim2.fromOffset(3, 3)
+					tween(tr, { BackgroundColor3 = val and TEXT or Color3.fromRGB(50, 50, 50) }, 0.18)
+					tween(knob, { Position = val and UDim2.fromOffset(19, 3) or UDim2.fromOffset(3, 3) }, 0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+					tween(knob, { BackgroundColor3 = val and Color3.fromRGB(10, 10, 10) or Color3.fromRGB(255, 255, 255) }, 0.18)
 					if cfg.callback then
 						cfg.callback(val)
 					end
@@ -661,7 +857,7 @@ function UILib:Window(config)
 				corner(bar, 2)
 				local fill = create("Frame", {
 					Size = UDim2.new((val - min) / math.max(max - min, 1), 0, 1, 0),
-					BackgroundColor3 = ACCENT,
+					BackgroundColor3 = TEXT,
 					BorderSizePixel = 0
 				}, bar)
 				corner(fill, 2)
@@ -671,16 +867,31 @@ function UILib:Window(config)
 			function mod:Dropdown(cfg)
 				cfg = cfg or {}
 				local f = self:_optRow(cfg.title or "Dropdown", 34)
-				create("TextLabel", {
+				local shell = create("TextButton", {
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, 0, 0.5, 0),
 					Size = UDim2.fromOffset(80, 22),
 					BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+					Text = "",
+					AutoButtonColor = false
+				}, f)
+				corner(shell, 5)
+				create("TextLabel", {
+					Position = UDim2.fromOffset(8, 0),
+					Size = UDim2.new(1, -16, 1, 0),
+					BackgroundTransparency = 1,
 					FontFace = F_Reg,
 					TextSize = 12,
+					TextXAlignment = Enum.TextXAlignment.Left,
 					TextColor3 = Color3.fromRGB(200, 200, 200),
 					Text = tostring(cfg.default or cfg.placeholder or "Select")
-				}, f)
+				}, shell)
+				shell.MouseEnter:Connect(function()
+					tween(shell, { BackgroundColor3 = Color3.fromRGB(52, 52, 52) }, 0.15)
+				end)
+				shell.MouseLeave:Connect(function()
+					tween(shell, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.15)
+				end)
 				setExpanded(true)
 				return mod
 			end
@@ -699,6 +910,12 @@ function UILib:Window(config)
 					AutoButtonColor = false
 				}, f)
 				corner(b, 5)
+				b.MouseEnter:Connect(function()
+					tween(b, { BackgroundColor3 = Color3.fromRGB(58, 58, 58) }, 0.15)
+				end)
+				b.MouseLeave:Connect(function()
+					tween(b, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.15)
+				end)
 				b.MouseButton1Click:Connect(function()
 					if cfg.callback then
 						cfg.callback()
@@ -710,7 +927,7 @@ function UILib:Window(config)
 			function mod:Keybind(cfg)
 				cfg = cfg or {}
 				local f = self:_optRow(cfg.title or "Keybind", 34)
-				create("TextLabel", {
+				local shell = create("TextButton", {
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, 0, 0.5, 0),
 					Size = UDim2.fromOffset(60, 22),
@@ -718,8 +935,16 @@ function UILib:Window(config)
 					FontFace = F_Reg,
 					TextSize = 12,
 					TextColor3 = Color3.fromRGB(200, 200, 200),
-					Text = cfg.key and cfg.key.Name or "None"
+					Text = cfg.key and cfg.key.Name or "None",
+					AutoButtonColor = false
 				}, f)
+				corner(shell, 5)
+				shell.MouseEnter:Connect(function()
+					tween(shell, { BackgroundColor3 = Color3.fromRGB(52, 52, 52) }, 0.15)
+				end)
+				shell.MouseLeave:Connect(function()
+					tween(shell, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.15)
+				end)
 				setExpanded(true)
 				return mod
 			end
@@ -727,24 +952,22 @@ function UILib:Window(config)
 		end
 		entry.MouseEnter:Connect(function()
 			if self.current ~= page then
-				entry.BackgroundColor3 = HOVER
-				entry.BackgroundTransparency = 0
+				tween(entry, { BackgroundTransparency = 0 }, 0.15)
+				tween(titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.15)
+				tween(chevHolder, { Position = UDim2.new(1, -12, 0.5, 0) }, 0.15)
 			end
 		end)
 		entry.MouseLeave:Connect(function()
 			if self.current ~= page then
-				entry.BackgroundTransparency = 1
+				tween(entry, { BackgroundTransparency = 1 }, 0.15)
+				tween(titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.15)
+				tween(chevHolder, { Position = UDim2.new(1, -14, 0.5, 0) }, 0.15)
 			end
 		end)
 		entry.MouseButton1Click:Connect(function() self:Select(name) end)
 		self.pages[name] = page
 		table.insert(self.order, page)
-		fitMain()
-		for _, p in ipairs(self.order) do
-			if p.panel then
-				p.panel.Position = UDim2.new(0.5, 6, main.Position.Y.Scale, main.Position.Y.Offset)
-			end
-		end
+		fitMain(true)
 		if not self.current then
 			self:Select(name)
 		end
@@ -756,26 +979,40 @@ function UILib:Window(config)
 		self.current = target
 		for _, p in ipairs(self.order) do
 			local active = p == target
-			p.panel.Visible = active
 			if active then
-				p.titleLbl.TextColor3 = ACCENT
-				if p.iconLbl then
-					p.iconLbl.TextColor3 = ACCENT
-				end
-				p.entry.BackgroundTransparency = 1
+				p.panel.Visible = true
+				pop(p.panel, 0.97)
+				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.18)
+				tween(p.entry, { BackgroundTransparency = 0 }, 0.18)
+				tintIcon(p.entryIcon, ICON_ON, 0.18)
 			else
-				p.titleLbl.TextColor3 = Color3.fromRGB(205, 205, 205)
-				if p.iconLbl then
-					p.iconLbl.TextColor3 = Color3.fromRGB(170, 170, 170)
-				end
-				p.entry.BackgroundTransparency = 1
+				p.panel.Visible = false
+				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.18)
+				tween(p.entry, { BackgroundTransparency = 1 }, 0.18)
+				tintIcon(p.entryIcon, ICON_DIM, 0.18)
 			end
 		end
 		return true
 	end
 	function self:SetOpen(v)
 		self.open = v ~= false
-		gui.Enabled = self.open
+		local sc = self.main:FindFirstChildOfClass("UIScale")
+		if self.open then
+			gui.Enabled = true
+			if sc then
+				sc.Scale = 0.95
+				tween(sc, { Scale = 1 }, 0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			end
+		else
+			if sc then
+				tween(sc, { Scale = 0.96 }, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			end
+			task.delay(0.15, function()
+				if not self.open then
+					gui.Enabled = false
+				end
+			end)
+		end
 		return self.open
 	end
 	function self:Toggle()
@@ -793,14 +1030,6 @@ function UILib:Window(config)
 			self:SetOpen(not self.open)
 		end
 	end))
-	main:GetPropertyChangedSignal("Position"):Connect(function()
-		for _, p in ipairs(self.order) do
-			if p.panel then
-				local cur = p.panel.Position
-				p.panel.Position = UDim2.new(cur.X.Scale, cur.X.Offset, main.Position.Y.Scale, main.Position.Y.Offset)
-			end
-		end
-	end)
 	return self
 end
 return UILib
