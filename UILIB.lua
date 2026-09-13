@@ -438,8 +438,27 @@ function UILib:Window(config)
 	self.open = true
 	self.connections = {}
 	local root = config.parent or getParent()
+	local guiName = config.name or "MIGUEL"
+	local function purge(list)
+		for _, child in ipairs(list) do
+			if child:IsA("ScreenGui") and (child.Name == guiName or child.Name == "VapeUI" or child.Name == "MIGUEL") then
+				pcall(function()
+					child:Destroy()
+				end)
+			end
+		end
+	end
+	pcall(function()
+		purge(root:GetChildren())
+	end)
+	pcall(function()
+		local core = game:GetService("CoreGui")
+		if core and core ~= root then
+			purge(core:GetChildren())
+		end
+	end)
 	local gui = create("ScreenGui", {
-		Name = config.name or "VapeUI",
+		Name = guiName,
 		ResetOnSpawn = false,
 		IgnoreGuiInset = true,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
