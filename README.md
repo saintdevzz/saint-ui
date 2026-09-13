@@ -3,7 +3,7 @@
 A single-file UI library for Roblox script executors. Dark theme, nav tabs, draggable window.
 
 Built from a hand-made design mockup, so it keeps that look: `#0A0A0A` window, `#1F1F1F` nav and
-dividers, off-white buttons, 8px corners, 58px titlebar. The nav sits flush against the separator
+dividers, dark pills that turn white on hover, 8px corners, 58px titlebar. The nav sits flush against the separator
 and the window's top corners are square, so the nav reads as connected to the titlebar.
 
 Every component is a full-width row: the **name on the left**, the **control on the right**, and an
@@ -26,12 +26,12 @@ local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/saintde
 local window = UILib:Window({
     title = "Saint",
     subtitle = "v0.0.1",
-    logo = "S",
+    logo = "rbxassetid://123456789",
     size = UDim2.fromOffset(639, 441),
     position = 0.5,
 })
 
-local main = window:Page("Main", "home")
+local main = window:Page("Main")
 
 main:Section("Combat")
 
@@ -78,7 +78,7 @@ UILib:Window({
 | --- | --- | --- | --- |
 | `title` | string | `"Saint"` | Titlebar text |
 | `subtitle` | string | `"v0.0.1"` | Dim line under the title |
-| `logo` | number / string | `nil` | 26x26 mark left of the title, see [Icons](#icons) |
+| `logo` | number / string | `nil` | 26x26 image left of the title, see [Icons](#icons) |
 | `size` | UDim2 | `639x441` | Restored size, also used by minimize |
 | `position` | number | `0.5` | Screen scale on both axes |
 | `nav` | boolean | `true` | Set `false` for a single-page script |
@@ -106,29 +106,29 @@ Window controls work out of the box: drag by the titlebar, `-` collapses to the 
 
 ## Icons
 
-Anything that takes an `icon` or a `logo` accepts the same three kinds of value, tried in order:
+Icons and logos are **images only**. There are no built-in icon presets and no text-glyph fallback:
+if the value is not a real asset id, nothing is drawn at all — no placeholder, no letter mark, no
+blank box.
 
-1. **A Roblox asset id.** A number (`12345`) or a numeric string (`"12345"`) is normalised to
-   `rbxassetid://12345`. A full `rbxassetid://`, `rbxasset://`, or `http(s)://` string is used as
-   is. Renders as an `ImageLabel` and is tinted with the row's colour.
-2. **A built-in drawn icon.** `home`, `settings`, `user`, `code`, `list`, `star`, `shield`,
-   `folder`, `search`, `power`, `chevron`.
-3. **Any other text.** Rendered as a bold text glyph, so `"S"` gives you a letter mark and `"AB"`
-   gives you two letters.
-
-Passing `nil` on a page falls back to the `list` preset; passing an empty string draws nothing.
+A `number` (`12345`) or a numeric string (`"12345"`) is normalised to `rbxassetid://12345`. A full
+`rbxassetid://`, `rbxasset://`, or `http(s)://` string is used as is. The result is an `ImageLabel`
+tinted with the row's colour, and it is `Fit`-scaled inside the icon slot.
 
 ```lua
-window:Page("Home", "home")                      -- drawn preset
-window:Page("Shop", "rbxassetid://123456789")    -- image
+window:Page("Home", "rbxassetid://123456789")    -- image
 window:Page("Tools", 123456789)                  -- image, numeric
-window:Page("Me", "S")                           -- text glyph
+window:Page("Raw", "https://example.com/i.png")  -- image, direct url
+window:Page("Plain")                             -- no icon at all
+window:Page("AlsoPlain", "star")                 -- still nothing: "star" is not an asset id
 ```
+
+Tabs never reserve space for an icon, so a page without one is just a normal tab. A tab icon is
+tinted `Theme.Icon` and switches to `Theme.IconActive` while its page is selected.
 
 ## Pages
 
 ```lua
-local page = window:Page("Settings", "settings")
+local page = window:Page("Settings")
 
 page:Section("Heading")
 page:Label("Some text")
@@ -150,7 +150,6 @@ local button = page:Button({
     title = "Execute",
     button = "Run",
     desc = "Runs the selected script",
-    variant = "filled",
     callback = function() end,
 })
 button:SetTitle("Running")
@@ -159,8 +158,10 @@ button:SetCallback(function() print("new callback") end)
 ```
 
 `title` is the row name, `button` is the label inside the pill on the right (default `"Run"`).
-`variant` is `"filled"` (default, off-white) or `"outlined"` (dark with a stroke). The whole row is
-clickable and tints on hover.
+
+There is one button style: a **dark pill on a dark panel**. Hovering the row brightens the panel to
+`Theme.Hover` and flips the pill to `Theme.Accent` (white) with black text, so the whole row reads as
+the click target. There is no outlined or transparent variant.
 
 ### Toggle
 
@@ -249,9 +250,13 @@ dropdown:GetValue()
 dropdown:SetOptions({ "One", "Two" })
 ```
 
-The shell on the right shows the current value or the placeholder. The list opens under the row,
-right aligned, and scrolls once it passes four visible rows, so long option lists stay inside the
-window.
+The shell on the right shows the current value or the placeholder. The option list is **floating**:
+it is parented to an overlay that sits outside the window's clipped frame, so it draws above
+everything, is never cut off by the window edge, and is free to overflow to the left or right of the
+row. It scrolls once it passes four visible rows, and it grows down from the shell.
+
+Only one list is open at a time per page, and switching pages closes whatever was open. The selected
+option is highlighted in `Theme.Text`; the rest stay `Theme.TextSoft`.
 
 ## Theming
 
@@ -277,10 +282,14 @@ design is hardcoded to the original mockup.
 
 - `Design.lua` is the original hand-built Studio mockup this library was rewritten from. It is kept
   as the visual reference, not as working code.
-- No external assets. Icons are drawn from frames and strokes if you do not pass an asset id, and
-  the font family is the built-in Gotham SSm, so nothing depends on an asset id that might be
-  private.
+- No external assets. Icons and logos are only drawn when you pass a real asset id, so the library
+  itself never depends on an image that might be private or removed. The font family is the built-in
+  Gotham SSm.
+- Components draw no borders of their own, so rows reach the true left and right edges of the
+  content area and no border peeks through at the extremes.
 - Page content lives in a `ScrollingFrame` with `AutomaticCanvasSize`, so components stack by
   layout order instead of fixed coordinates and long pages scroll.
+- Floating dropdown lists live in a full-screen overlay next to the window, which is why they can
+  render above the window and overflow its edges.
 - Closing the window disconnects the input connections the window, slider, and keybind components
   registered, so nothing keeps running after the GUI is gone.

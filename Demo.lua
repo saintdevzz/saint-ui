@@ -3,14 +3,13 @@ local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/saintde
 local window = UILib:Window({
 	title = "Saint",
 	subtitle = "v0.0.1",
-	logo = "S",
 	nav = true,
 	size = UDim2.fromOffset(639, 441),
 	position = 0.5,
 })
 
-local home = window:Page("Home", "home")
-local settings = window:Page("Settings", "settings")
+local home = window:Page("Home")
+local settings = window:Page("Settings")
 
 home:Section("Buttons")
 home:Label("Every component on this page is live, click around and see.")
@@ -27,7 +26,6 @@ home:Button({
 home:Button({
 	title = "Cancel",
 	button = "Abort",
-	variant = "outlined",
 	desc = "Stops whatever is running right now",
 	callback = function()
 		print("[Saint] Cancel pressed")
@@ -113,7 +111,6 @@ local nameBox = settings:TextBox({
 settings:Button({
 	title = "Read The Box",
 	button = "Print",
-	variant = "outlined",
 	desc = "Grabs the value without waiting for enter",
 	callback = function()
 		print("[Saint] box contains", nameBox:GetText())
@@ -191,7 +188,6 @@ settings:Section("Actions")
 settings:Button({
 	title = "Reset Settings",
 	button = "Reset",
-	variant = "outlined",
 	desc = "Puts every component back to its default",
 	callback = function()
 		infinite:SetValue(false)

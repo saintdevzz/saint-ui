@@ -85,8 +85,6 @@ local function object(instance)
 	return wrapper
 end
 
-local Icons = {}
-
 local function line(parent, x1, y1, x2, y2, thickness, color)
 	local dx = x2 - x1
 	local dy = y2 - y1
@@ -100,126 +98,10 @@ local function line(parent, x1, y1, x2, y2, thickness, color)
 	}, parent)
 end
 
-local function bar(parent, x, y, width, height, color)
-	return create("Frame", {
-		Position = UDim2.fromOffset(x, y),
-		Size = UDim2.fromOffset(width, height),
-		BackgroundColor3 = color,
-		BorderSizePixel = 0,
-	}, parent)
-end
-
-local function dot(parent, x, y, size, color)
-	local circle = bar(parent, x, y, size, size, color)
-	round(circle, size)
-	return circle
-end
-
-local function ring(parent, x, y, size, color, thickness)
-	local circle = create("Frame", {
-		Position = UDim2.fromOffset(x, y),
-		Size = UDim2.fromOffset(size, size),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-	}, parent)
-	round(circle, size)
-	stroke(circle, color, thickness or 1.4)
-	return circle
-end
-
-Icons.home = function(parent, color)
-	line(parent, 3, 7, 8, 1.5, 1.4, color)
-	line(parent, 8, 1.5, 13, 7, 1.4, color)
-	bar(parent, 3, 6.4, 1.4, 7, color)
-	bar(parent, 11.6, 6.4, 1.4, 7, color)
-	bar(parent, 3, 12, 10, 1.4, color)
-	bar(parent, 6.8, 9, 2.4, 4.4, color)
-end
-
-Icons.settings = function(parent, color)
-	bar(parent, 1.5, 3, 13, 1.4, color)
-	bar(parent, 1.5, 7.3, 13, 1.4, color)
-	bar(parent, 1.5, 11.6, 13, 1.4, color)
-	dot(parent, 3, 2.3, 2.8, color)
-	dot(parent, 9.4, 6.6, 2.8, color)
-	dot(parent, 5.6, 10.9, 2.8, color)
-end
-
-Icons.user = function(parent, color)
-	ring(parent, 5, 1.5, 6, color, 1.4)
-	local body = bar(parent, 2, 9.5, 12, 5.5, color)
-	round(body, 3)
-end
-
-Icons.code = function(parent, color)
-	line(parent, 6, 4, 2.5, 8, 1.4, color)
-	line(parent, 2.5, 8, 6, 12, 1.4, color)
-	line(parent, 10, 4, 13.5, 8, 1.4, color)
-	line(parent, 13.5, 8, 10, 12, 1.4, color)
-	line(parent, 9.2, 3, 6.8, 13, 1.2, color)
-end
-
-Icons.list = function(parent, color)
-	bar(parent, 2, 3, 12, 1.6, color)
-	bar(parent, 2, 7.2, 12, 1.6, color)
-	bar(parent, 2, 11.4, 12, 1.6, color)
-end
-
-Icons.star = function(parent, color)
-	local points = {}
-	for index = 1, 5 do
-		local angle = math.rad(-90 + (index - 1) * 144)
-		table.insert(points, Vector2.new(8 + math.cos(angle) * 6.2, 8 + math.sin(angle) * 6.2))
-	end
-	for index = 1, 5 do
-		local first = points[index]
-		local second = points[index % 5 + 1]
-		line(parent, first.X, first.Y, second.X, second.Y, 1.2, color)
-	end
-end
-
-Icons.shield = function(parent, color)
-	line(parent, 8, 1.5, 13.5, 4.5, 1.4, color)
-	line(parent, 13.5, 4.5, 12.5, 10.5, 1.4, color)
-	line(parent, 12.5, 10.5, 8, 14.5, 1.4, color)
-	line(parent, 8, 14.5, 3.5, 10.5, 1.4, color)
-	line(parent, 3.5, 10.5, 2.5, 4.5, 1.4, color)
-	line(parent, 2.5, 4.5, 8, 1.5, 1.4, color)
-end
-
-Icons.folder = function(parent, color)
-	line(parent, 2, 13.5, 2, 4, 1.4, color)
-	line(parent, 2, 4, 6, 4, 1.4, color)
-	line(parent, 6, 4, 7.5, 6.5, 1.4, color)
-	line(parent, 7.5, 6.5, 14, 6.5, 1.4, color)
-	line(parent, 14, 6.5, 14, 13.5, 1.4, color)
-	line(parent, 2, 13.5, 14, 13.5, 1.4, color)
-end
-
-Icons.search = function(parent, color)
-	ring(parent, 1.5, 1.5, 10, color, 1.4)
-	line(parent, 11, 11, 14.5, 14.5, 1.4, color)
-end
-
-Icons.power = function(parent, color)
-	local previous
-	for index = 0, 8 do
-		local angle = math.rad(-60 + index * 37.5)
-		local point = Vector2.new(8 + math.cos(angle) * 5.5, 8.5 + math.sin(angle) * 5.5)
-		if previous then
-			line(parent, previous.X, previous.Y, point.X, point.Y, 1.3, color)
-		end
-		previous = point
-	end
-	line(parent, 8, 1.5, 8, 8, 1.3, color)
-end
-
-Icons.chevron = function(parent, color)
+local function chevron(parent, color)
 	line(parent, 3.5, 6, 8, 10.5, 1.4, color)
 	line(parent, 8, 10.5, 12.5, 6, 1.4, color)
 end
-
-UILib.Icons = Icons
 
 local function assetId(value)
 	if type(value) == "number" then
@@ -237,7 +119,12 @@ local function assetId(value)
 	return nil
 end
 
-local function buildIcon(parent, name, color, size)
+local function buildIcon(parent, value, color, size)
+	local asset = assetId(value)
+	if not asset then
+		return nil
+	end
+
 	local holder = create("Frame", {
 		Name = "Icon",
 		BackgroundTransparency = 1,
@@ -246,37 +133,14 @@ local function buildIcon(parent, name, color, size)
 		Position = UDim2.fromScale(0.5, 0.5),
 	}, parent)
 
-	local asset = assetId(name)
-
-	if asset then
-		create("ImageLabel", {
-			Name = "Glyph",
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-			Image = asset,
-			ImageColor3 = color,
-			ScaleType = Enum.ScaleType.Fit,
-		}, holder)
-	elseif Icons[name] then
-		local canvas = create("Frame", {
-			Name = "Glyph",
-			Size = UDim2.fromOffset(16, 16),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			BackgroundTransparency = 1,
-		}, holder)
-		Icons[name](canvas, color)
-	elseif name ~= nil and name ~= "" then
-		create("TextLabel", {
-			Name = "Glyph",
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-			FontFace = theme.FontBold,
-			TextSize = size or 16,
-			TextColor3 = color,
-			Text = tostring(name),
-		}, holder)
-	end
+	create("ImageLabel", {
+		Name = "Glyph",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Image = asset,
+		ImageColor3 = color,
+		ScaleType = Enum.ScaleType.Fit,
+	}, holder)
 
 	return holder
 end
@@ -344,7 +208,8 @@ function UILib:Window(config)
 	}, main)
 
 	local logoWidth = 0
-	if config.logo ~= nil then
+	local logoAsset = assetId(config.logo)
+	if logoAsset then
 		logoWidth = 36
 		local holder = create("Frame", {
 			Name = "Logo",
@@ -352,7 +217,7 @@ function UILib:Window(config)
 			Position = UDim2.fromOffset(14, 16),
 			BackgroundTransparency = 1,
 		}, titlebar)
-		buildIcon(holder, config.logo, theme.Text, 26)
+		buildIcon(holder, logoAsset, theme.Text, 26)
 	end
 
 	local title = create("TextLabel", {
@@ -446,6 +311,7 @@ function UILib:Window(config)
 	}, navbar)
 
 	create("UIListLayout", {
+		Padding = UDim.new(0, 4),
 		FillDirection = Enum.FillDirection.Horizontal,
 		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		VerticalAlignment = Enum.VerticalAlignment.Center,
@@ -477,6 +343,13 @@ function UILib:Window(config)
 		BackgroundTransparency = 1,
 	}, main)
 
+	local overlay = create("Frame", {
+		Name = "Overlay",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		ZIndex = 50,
+	}, gui)
+
 	window.gui = gui
 	window.main = main
 	window.titlebar = titlebar
@@ -486,6 +359,7 @@ function UILib:Window(config)
 	window.navbar = navbar
 	window.tabbar = tabs
 	window.content = content
+	window.overlay = overlay
 
 	local dragging = false
 	local dragInput
@@ -549,7 +423,7 @@ function UILib:Window(config)
 	window:SetNavEnabled(window.navEnabled)
 
 	if config.page then
-		window:Page(config.page, config.icon or "home")
+		window:Page(config.page, config.icon)
 	end
 
 	return window
@@ -577,7 +451,7 @@ function Window:Page(name, icon)
 
 	local holder = create("Frame", {
 		Name = "Holder",
-		Size = UDim2.new(1, -6, 0, 0),
+		Size = UDim2.new(1, -3, 0, 0),
 		BackgroundTransparency = 1,
 		AutomaticSize = Enum.AutomaticSize.Y,
 	}, scroll)
@@ -596,6 +470,7 @@ function Window:Page(name, icon)
 	page.holder = holder
 	page.window = self
 	page.teardowns = {}
+	page.floaters = {}
 
 	table.insert(self.pages, page)
 	self:Tab(page, icon)
@@ -626,7 +501,7 @@ function Window:Tab(page, icon)
 	}, self.tabbar)
 	round(tab, 5)
 
-	local holder = buildIcon(tab, icon or "list", theme.Icon, 15)
+	local holder = buildIcon(tab, icon, theme.Icon, 15)
 
 	tab.MouseButton1Click:Connect(function()
 		self:Select(page.name)
@@ -672,13 +547,19 @@ function Window:Select(name)
 	end
 
 	for _, page in ipairs(self.pages) do
+		page:CloseFloating()
+	end
+
+	for _, page in ipairs(self.pages) do
 		page.instance.Visible = page == target
 	end
 
 	for page, tab in pairs(self.tabs) do
 		local active = page == target
 		tween(tab.instance, { BackgroundTransparency = active and 0 or 1 }, 0.15)
-		tint(tab.icon, active and theme.IconActive or theme.Icon)
+		if tab.icon then
+			tint(tab.icon, active and theme.IconActive or theme.Icon)
+		end
 	end
 
 	self.current = target
@@ -765,6 +646,17 @@ end
 function Page:Register(teardown)
 	table.insert(self.teardowns, teardown)
 	return teardown
+end
+
+function Page:RegisterFloating(close)
+	table.insert(self.floaters, close)
+	return close
+end
+
+function Page:CloseFloating()
+	for _, close in ipairs(self.floaters) do
+		close()
+	end
 end
 
 function Page:Teardown()
@@ -902,11 +794,6 @@ function Page:Button(config)
 		TextColor3 = theme.TextSoft,
 		Text = config.button or "Run",
 	}, pill)
-
-	if config.variant == "outlined" then
-		stroke(panel, theme.Divider, 1)
-		stroke(pill, theme.Stroke, 1)
-	end
 
 	panel.MouseEnter:Connect(function()
 		tween(panel, { BackgroundColor3 = theme.Hover }, 0.15)
@@ -1192,14 +1079,14 @@ function Page:TextBox(config)
 		PaddingRight = UDim.new(0, 8),
 	}, input)
 
-	local outline = stroke(panel, theme.Divider, 1)
+	local outline = stroke(input, theme.Control, 1)
 
 	input.Focused:Connect(function()
 		tween(outline, { Color = theme.Stroke }, 0.15)
 	end)
 
 	input.FocusLost:Connect(function(enterPressed)
-		tween(outline, { Color = theme.Divider }, 0.15)
+		tween(outline, { Color = theme.Control }, 0.15)
 		if callback then
 			callback(input.Text, enterPressed)
 		end
@@ -1356,25 +1243,24 @@ function Page:Dropdown(config)
 	label.Text = selected ~= nil and tostring(selected) or (config.placeholder or "Select...")
 	label.TextColor3 = selected ~= nil and theme.TextSoft or theme.TextDim
 
-	local chevron = create("Frame", {
+	local arrow = create("Frame", {
 		Name = "Chevron",
 		Size = UDim2.fromOffset(16, 16),
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -12, 0.5, 0),
 		BackgroundTransparency = 1,
 	}, shell)
-	Icons.chevron(chevron, theme.TextDim)
+	chevron(arrow, theme.TextDim)
 
 	local list = create("Frame", {
 		Name = "List",
-		Size = UDim2.new(0, 170, 0, 0),
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 1, 2),
+		Size = UDim2.fromOffset(170, 0),
 		BackgroundColor3 = theme.Control,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		ZIndex = 5,
-	}, panel)
+		ZIndex = 60,
+		Visible = false,
+	}, self.window.overlay)
 	round(list, 6)
 
 	local scroll = create("ScrollingFrame", {
@@ -1407,6 +1293,29 @@ function Page:Dropdown(config)
 	local function shownHeight()
 		local visible = math.min(#options, 4)
 		return visible * 28 + math.max(visible - 1, 0) * 4 + 8
+	end
+
+	local function place()
+		local origin = self.window.overlay
+		list.Position = UDim2.fromOffset(
+			shell.AbsolutePosition.X - origin.AbsolutePosition.X,
+			shell.AbsolutePosition.Y + shell.AbsoluteSize.Y - origin.AbsolutePosition.Y + 4
+		)
+	end
+
+	local function close(animate)
+		if not expanded then
+			return
+		end
+		expanded = false
+		list.Visible = false
+		if animate then
+			tween(list, { Size = UDim2.fromOffset(170, 0) }, 0.18)
+			tween(arrow, { Rotation = 0 }, 0.18)
+		else
+			list.Size = UDim2.fromOffset(170, 0)
+			arrow.Rotation = 0
+		end
 	end
 
 	local function refresh()
@@ -1444,9 +1353,11 @@ function Page:Dropdown(config)
 				selected = option
 				label.Text = tostring(option)
 				label.TextColor3 = theme.TextSoft
-				expanded = false
-				tween(list, { Size = UDim2.new(0, 170, 0, 0) }, 0.18)
-				tween(chevron, { Rotation = 0 }, 0.18)
+				for _, other in ipairs(entries) do
+					other.TextColor3 = theme.TextSoft
+				end
+				entry.TextColor3 = theme.Text
+				close(true)
 				if callback then
 					callback(option)
 				end
@@ -1458,14 +1369,37 @@ function Page:Dropdown(config)
 
 	shell.MouseButton1Click:Connect(function()
 		if expanded then
-			expanded = false
-			tween(list, { Size = UDim2.new(0, 170, 0, 0) }, 0.18)
-			tween(chevron, { Rotation = 0 }, 0.18)
+			close(true)
 		else
 			expanded = true
-			tween(list, { Size = UDim2.new(0, 170, 0, shownHeight()) }, 0.18)
-			tween(chevron, { Rotation = 180 }, 0.18)
+			list.Visible = true
+			place()
+			list.Size = UDim2.fromOffset(170, 0)
+			tween(list, { Size = UDim2.fromOffset(170, shownHeight()) }, 0.18)
+			tween(arrow, { Rotation = 180 }, 0.18)
 		end
+	end)
+
+	local follow = function()
+		if expanded then
+			place()
+		end
+	end
+
+	local moveConnection = self.window.main:GetPropertyChangedSignal("AbsolutePosition"):Connect(follow)
+	local scrollConnection = self.instance:GetPropertyChangedSignal("CanvasPosition"):Connect(follow)
+
+	self:Register(function()
+		moveConnection:Disconnect()
+		scrollConnection:Disconnect()
+	end)
+
+	self:RegisterFloating(function()
+		close(false)
+	end)
+
+	self:Register(function()
+		list:Destroy()
 	end)
 
 	refresh()
@@ -1475,12 +1409,12 @@ function Page:Dropdown(config)
 		options = values or {}
 		refresh()
 		if expanded then
-			list.Size = UDim2.new(0, 170, 0, shownHeight())
+			list.Size = UDim2.fromOffset(170, shownHeight())
 		end
 	end
 	function wrapper:SetValue(value)
 		selected = value
-		label.Text = value ~= nil and tostring(value) or "Select..."
+		label.Text = value ~= nil and tostring(value) or (config.placeholder or "Select...")
 		label.TextColor3 = value ~= nil and theme.TextSoft or theme.TextDim
 		refresh()
 	end
