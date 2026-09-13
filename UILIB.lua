@@ -472,7 +472,7 @@ function UILib:Window(config)
 		TextSize = 20,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = Color3.fromRGB(255, 255, 255),
-		Text = 'VAPE<font color="rgb(150,150,150)"> V4</font>'
+		Text = 'MIGUEL'
 	}, head)
 	local gearBtn = create("TextButton", {
 		Name = "Settings",
@@ -809,6 +809,7 @@ function UILib:Window(config)
 		page.list = catList
 		page._count = 0
 		page.modules = {}
+		page.open = false
 		page.window = self
 		function page:SetTag(t)
 			if pillLbl then
@@ -880,27 +881,28 @@ function UILib:Window(config)
 			local chevIcon = drawChevron(chevBtn, Color3.fromRGB(125, 125, 125))
 			chevIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 			chevIcon.Position = UDim2.fromScale(0.5, 0.5)
-			local dotsBtn = create("TextButton", {
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -10, 0.5, 0),
-				Size = UDim2.fromOffset(22, 24),
-				BackgroundTransparency = 1,
-				Text = "",
-				AutoButtonColor = false
-			}, row)
-			local dh = dotsIndicator(dotsBtn, Color3.fromRGB(125, 125, 125))
-			dh.Position = UDim2.fromScale(0.5, 0.5)
-			dh.AnchorPoint = Vector2.new(0.5, 0.5)
-			row.MouseEnter:Connect(function()
-				tween(row, { BackgroundTransparency = 0 }, 0.22)
-				tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.fromOffset(18, 0) }, 0.25)
-				tween(dh, { Rotation = 90 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-			end)
-			row.MouseLeave:Connect(function()
-				tween(row, { BackgroundTransparency = 1 }, 0.25)
-				tween(t, { Position = UDim2.fromOffset(16, 0) }, 0.25)
-				tween(dh, { Rotation = 0 }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-			end)
+		local colonBtn = create("TextButton", {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Size = UDim2.fromOffset(22, 24),
+			BackgroundTransparency = 1,
+			FontFace = F_Bold,
+			TextSize = 16,
+			TextColor3 = Color3.fromRGB(125, 125, 125),
+			Text = ":",
+			AutoButtonColor = false,
+			Visible = false
+		}, row)
+		row.MouseEnter:Connect(function()
+			tween(row, { BackgroundTransparency = 0 }, 0.22)
+			tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.fromOffset(18, 0) }, 0.25)
+			tween(colonBtn, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
+		end)
+		row.MouseLeave:Connect(function()
+			tween(row, { BackgroundTransparency = 1 }, 0.25)
+			tween(t, { Position = UDim2.fromOffset(16, 0) }, 0.25)
+			tween(colonBtn, { TextColor3 = Color3.fromRGB(125, 125, 125) }, 0.25)
+		end)
 			local opts = create("Frame", {
 				Name = "Options",
 				Size = UDim2.new(1, -24, 0, 0),
@@ -1133,14 +1135,14 @@ function UILib:Window(config)
 							vp = workspace.CurrentCamera.ViewportSize
 						end
 					end)
-					local ax = dotsBtn.AbsolutePosition.X + dotsBtn.AbsoluteSize.X + 8
-					local ay = dotsBtn.AbsolutePosition.Y - 10
-					local w = SIDE_W
-					local h = frame.Size.Y.Offset
-					if h < 60 then h = 120 end
-					if ax + w > vp.X - 8 then
-						ax = dotsBtn.AbsolutePosition.X - w - 8
-					end
+				local ax = colonBtn.AbsolutePosition.X + colonBtn.AbsoluteSize.X + 8
+				local ay = colonBtn.AbsolutePosition.Y - 10
+				local w = SIDE_W
+				local h = frame.Size.Y.Offset
+				if h < 60 then h = 120 end
+				if ax + w > vp.X - 8 then
+					ax = colonBtn.AbsolutePosition.X - w - 8
+				end
 					if ay + h > vp.Y - 8 then
 						ay = vp.Y - h - 8
 					end
@@ -1162,28 +1164,29 @@ function UILib:Window(config)
 					mod._sideOpen = false
 					sp:Hide()
 				end)
-				table.insert(mod.sidePanels, sp)
-				fitSide(false)
-				return sp
+			table.insert(mod.sidePanels, sp)
+			if not colonBtn.Visible then
+				colonBtn.Visible = true
 			end
-			local function toggleSide()
-				if #mod.sidePanels == 0 then
-					mod:Panel(mname .. " Settings")
-				end
-				mod._sideOpen = not mod._sideOpen
-				if mod._sideOpen then
-					for _, sp in ipairs(mod.sidePanels) do
-						sp:Show()
-					end
-					tween(dh, { Rotation = 90 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-				else
-					for _, sp in ipairs(mod.sidePanels) do
-						sp:Hide()
-					end
-					tween(dh, { Rotation = 0 }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-				end
+			fitSide(false)
+			return sp
 			end
-			dotsBtn.MouseButton1Click:Connect(toggleSide)
+		local function toggleSide()
+			if #mod.sidePanels == 0 then return end
+			mod._sideOpen = not mod._sideOpen
+			if mod._sideOpen then
+				for _, sp in ipairs(mod.sidePanels) do
+					sp:Show()
+				end
+				tween(colonBtn, { TextColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.new(1, -8, 0.5, 0) }, 0.25)
+			else
+				for _, sp in ipairs(mod.sidePanels) do
+					sp:Hide()
+				end
+				tween(colonBtn, { TextColor3 = Color3.fromRGB(125, 125, 125), Position = UDim2.new(1, -10, 0.5, 0) }, 0.25)
+			end
+		end
+		colonBtn.MouseButton1Click:Connect(toggleSide)
 			local enabled = false
 			row.MouseButton1Click:Connect(function()
 				enabled = not enabled
@@ -1200,21 +1203,77 @@ function UILib:Window(config)
 			table.insert(page.modules, mod)
 			return mod
 		end
+		local function setPageOpen(p, v, entrance)
+			p.open = v ~= false
+			if p.open then
+				p.panel.Visible = true
+				pop(p.panel, 0.96)
+				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
+				tween(p.entry, { BackgroundTransparency = 0 }, 0.22)
+				tintIcon(p.entryIcon, ICON_ON, 0.22)
+				if entrance then
+					local idx = 0
+					for _, w in ipairs(p.list:GetChildren()) do
+						if w:IsA("Frame") then
+							idx = idx + 1
+							local r = w:FindFirstChild("Row")
+							if r then
+								local lbl
+								for _, d in ipairs(r:GetChildren()) do
+									if d:IsA("TextLabel") then
+										lbl = d
+										break
+									end
+								end
+								r.BackgroundTransparency = 1
+								if lbl then
+									lbl.TextTransparency = 1
+									lbl.Position = UDim2.fromOffset(26, 0)
+									local dly = idx * 0.035
+									task.delay(dly, function()
+										if lbl and lbl.Parent then
+											tween(lbl, { TextTransparency = 0, Position = UDim2.fromOffset(16, 0) }, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+										end
+									end)
+								end
+							end
+						end
+					end
+				end
+			else
+				p.panel.Visible = false
+				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.22)
+				tween(p.entry, { BackgroundTransparency = 1 }, 0.22)
+				tintIcon(p.entryIcon, ICON_DIM, 0.22)
+				for _, m in ipairs(p.modules) do
+					m._sideOpen = false
+					for _, sp in ipairs(m.sidePanels) do
+						if sp.frame then
+							sp.frame.Visible = false
+						end
+					end
+				end
+			end
+		end
+		page._setOpen = setPageOpen
 		entry.MouseEnter:Connect(function()
-			if self.current ~= page then
+			if not page.open then
 				tween(entry, { BackgroundTransparency = 0 }, 0.22)
 				tween(titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
 				tween(chevHolder, { Position = UDim2.new(1, -12, 0.5, 0) }, 0.25)
 			end
 		end)
 		entry.MouseLeave:Connect(function()
-			if self.current ~= page then
+			if not page.open then
 				tween(entry, { BackgroundTransparency = 1 }, 0.25)
 				tween(titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.25)
 				tween(chevHolder, { Position = UDim2.new(1, -14, 0.5, 0) }, 0.25)
 			end
 		end)
-		entry.MouseButton1Click:Connect(function() self:Select(name) end)
+		entry.MouseButton1Click:Connect(function()
+			self.current = page
+			setPageOpen(page, not page.open, true)
+		end)
 		self.pages[name] = page
 		table.insert(self.order, page)
 		fitMain(true)
@@ -1226,53 +1285,8 @@ function UILib:Window(config)
 	function self:Select(name)
 		local target = self.pages[name]
 		if not target then return false end
-		closeAllSidePanels()
 		self.current = target
-		for _, p in ipairs(self.order) do
-			local active = p == target
-			if active then
-				p.panel.Visible = true
-				pop(p.panel, 0.96)
-				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
-				tween(p.entry, { BackgroundTransparency = 0 }, 0.22)
-				tintIcon(p.entryIcon, ICON_ON, 0.22)
-				local idx = 0
-				for _, w in ipairs(p.list:GetChildren()) do
-					if w:IsA("Frame") then
-						idx = idx + 1
-						local r = w:FindFirstChild("Row")
-						if r then
-							local lbl
-							for _, d in ipairs(r:GetChildren()) do
-								if d:IsA("TextLabel") then
-									lbl = d
-									break
-								end
-							end
-							r.BackgroundTransparency = 1
-							if lbl then
-								lbl.TextTransparency = 1
-								local sx = lbl.Position
-								lbl.Position = UDim2.fromOffset(26, 0)
-								local dly = idx * 0.035
-								task.delay(dly, function()
-									tween(r, { BackgroundTransparency = 1 }, 0.3)
-									if lbl and lbl.Parent then
-										tween(lbl, { TextTransparency = 0, Position = UDim2.fromOffset(16, 0) }, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-									end
-								end)
-								lbl.Position = sx
-							end
-						end
-					end
-				end
-			else
-				p.panel.Visible = false
-				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.22)
-				tween(p.entry, { BackgroundTransparency = 1 }, 0.22)
-				tintIcon(p.entryIcon, ICON_DIM, 0.22)
-			end
-		end
+		target._setOpen(true, true)
 		return true
 	end
 	function self:SetOpen(v)

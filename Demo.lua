@@ -34,3 +34,4 @@ bones:Dropdown({ title = "Style", options = { "Lines", "Dots" }, default = "Line
 render:Module("Chams")
 window.pages["Utility"]:Module("Blink")
 window:Select("Combat")
+window:Select("Render")
