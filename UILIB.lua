@@ -871,7 +871,7 @@ function UILib:Window(config)
 			}, row)
 			local chevBtn = create("TextButton", {
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -36, 0.5, 0),
+				Position = UDim2.new(1, -10, 0.5, 0),
 				Size = UDim2.fromOffset(20, 24),
 				BackgroundTransparency = 1,
 				Text = "",
@@ -881,28 +881,28 @@ function UILib:Window(config)
 			local chevIcon = drawChevron(chevBtn, Color3.fromRGB(125, 125, 125))
 			chevIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 			chevIcon.Position = UDim2.fromScale(0.5, 0.5)
-		local colonBtn = create("TextButton", {
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, 0),
-			Size = UDim2.fromOffset(22, 24),
-			BackgroundTransparency = 1,
-			FontFace = F_Bold,
-			TextSize = 16,
-			TextColor3 = Color3.fromRGB(125, 125, 125),
-			Text = ":",
-			AutoButtonColor = false,
-			Visible = false
-		}, row)
-		row.MouseEnter:Connect(function()
-			tween(row, { BackgroundTransparency = 0 }, 0.22)
-			tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.fromOffset(18, 0) }, 0.25)
-			tween(colonBtn, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
-		end)
-		row.MouseLeave:Connect(function()
-			tween(row, { BackgroundTransparency = 1 }, 0.25)
-			tween(t, { Position = UDim2.fromOffset(16, 0) }, 0.25)
-			tween(colonBtn, { TextColor3 = Color3.fromRGB(125, 125, 125) }, 0.25)
-		end)
+			local dotsBtn = create("TextButton", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -10, 0.5, 0),
+				Size = UDim2.fromOffset(22, 24),
+				BackgroundTransparency = 1,
+				Text = "",
+				AutoButtonColor = false,
+				Visible = false
+			}, row)
+			local dh = dotsIndicator(dotsBtn, Color3.fromRGB(125, 125, 125))
+			dh.Position = UDim2.fromScale(0.5, 0.5)
+			dh.AnchorPoint = Vector2.new(0.5, 0.5)
+			row.MouseEnter:Connect(function()
+				tween(row, { BackgroundTransparency = 0 }, 0.22)
+				tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.fromOffset(18, 0) }, 0.25)
+				tween(dh, { Rotation = 90 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			end)
+			row.MouseLeave:Connect(function()
+				tween(row, { BackgroundTransparency = 1 }, 0.25)
+				tween(t, { Position = UDim2.fromOffset(16, 0) }, 0.25)
+				tween(dh, { Rotation = 0 }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			end)
 			local opts = create("Frame", {
 				Name = "Options",
 				Size = UDim2.new(1, -24, 0, 0),
@@ -963,12 +963,21 @@ function UILib:Window(config)
 			mod._n = 0
 			mod.sidePanels = {}
 			mod._sideOpen = false
+			local function layoutRowBtns(animate)
+				local target = (#mod.sidePanels > 0) and UDim2.new(1, -36, 0.5, 0) or UDim2.new(1, -10, 0.5, 0)
+				if animate then
+					tween(chevBtn, { Position = target }, 0.25)
+				else
+					chevBtn.Position = target
+				end
+			end
 			local function revealChev()
 				if not chevBtn.Visible then
 					chevBtn.Visible = true
 					chevIcon.Rotation = 0
 					tween(chevBtn, { BackgroundTransparency = 0 }, 0.2)
 				end
+				layoutRowBtns(true)
 			end
 			function mod:_optRow(title, h)
 				mod._n = mod._n + 1
@@ -1135,13 +1144,13 @@ function UILib:Window(config)
 							vp = workspace.CurrentCamera.ViewportSize
 						end
 					end)
-				local ax = colonBtn.AbsolutePosition.X + colonBtn.AbsoluteSize.X + 8
-				local ay = colonBtn.AbsolutePosition.Y - 10
+				local ax = dotsBtn.AbsolutePosition.X + dotsBtn.AbsoluteSize.X + 8
+				local ay = dotsBtn.AbsolutePosition.Y - 10
 				local w = SIDE_W
 				local h = frame.Size.Y.Offset
 				if h < 60 then h = 120 end
 				if ax + w > vp.X - 8 then
-					ax = colonBtn.AbsolutePosition.X - w - 8
+					ax = dotsBtn.AbsolutePosition.X - w - 8
 				end
 					if ay + h > vp.Y - 8 then
 						ay = vp.Y - h - 8
@@ -1164,29 +1173,30 @@ function UILib:Window(config)
 					mod._sideOpen = false
 					sp:Hide()
 				end)
-			table.insert(mod.sidePanels, sp)
-			if not colonBtn.Visible then
-				colonBtn.Visible = true
-			end
-			fitSide(false)
-			return sp
-			end
-		local function toggleSide()
-			if #mod.sidePanels == 0 then return end
-			mod._sideOpen = not mod._sideOpen
-			if mod._sideOpen then
-				for _, sp in ipairs(mod.sidePanels) do
-					sp:Show()
+				table.insert(mod.sidePanels, sp)
+				if not dotsBtn.Visible then
+					dotsBtn.Visible = true
 				end
-				tween(colonBtn, { TextColor3 = Color3.fromRGB(255, 255, 255), Position = UDim2.new(1, -8, 0.5, 0) }, 0.25)
-			else
-				for _, sp in ipairs(mod.sidePanels) do
-					sp:Hide()
-				end
-				tween(colonBtn, { TextColor3 = Color3.fromRGB(125, 125, 125), Position = UDim2.new(1, -10, 0.5, 0) }, 0.25)
+				layoutRowBtns(true)
+				fitSide(false)
+				return sp
 			end
-		end
-		colonBtn.MouseButton1Click:Connect(toggleSide)
+			local function toggleSide()
+				if #mod.sidePanels == 0 then return end
+				mod._sideOpen = not mod._sideOpen
+				if mod._sideOpen then
+					for _, sp in ipairs(mod.sidePanels) do
+						sp:Show()
+					end
+					tween(dh, { Rotation = 90 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+				else
+					for _, sp in ipairs(mod.sidePanels) do
+						sp:Hide()
+					end
+					tween(dh, { Rotation = 0 }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+				end
+			end
+			dotsBtn.MouseButton1Click:Connect(toggleSide)
 			local enabled = false
 			row.MouseButton1Click:Connect(function()
 				enabled = not enabled
