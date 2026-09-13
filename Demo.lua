@@ -3,16 +3,16 @@ local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/saintde
 local window = UILib:Window({
 	title = "Saint",
 	subtitle = "v0.0.1",
-	nav = true,
-	size = UDim2.fromOffset(639, 441),
+	size = UDim2.fromOffset(720, 470),
 	position = 0.5,
 })
 
 local home = window:Page("Home")
+local combat = window:Page("Combat")
 local settings = window:Page("Settings")
 
-home:Section("Buttons")
-home:Label("Every component on this page is live, click around and see.")
+home:Group("Quick actions")
+home:Label("Everything on this page is live, click around and see.")
 
 home:Button({
 	title = "Execute",
@@ -32,173 +32,171 @@ home:Button({
 	end,
 })
 
-local state = false
-local toggled = home:Button({
-	title = "Toggle Me",
-	button = "Off",
-	desc = "Swaps its own label every time you click",
-	callback = function() end,
-})
-
-toggled:SetCallback(function()
-	state = not state
-	toggled:SetButton(state and "On" or "Off")
-	toggled:SetTitle(state and "Toggle Me (On)" or "Toggle Me")
-	print("[Saint] state is now", state)
-end)
-
-home:Section("Sliders")
-home:Divider()
-
-home:Slider({
-	title = "WalkSpeed",
-	desc = "Drag the knob or click anywhere on the bar",
-	min = 16,
-	max = 200,
-	value = 16,
-	callback = function(value)
-		local character = game:GetService("Players").LocalPlayer.Character
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			humanoid.WalkSpeed = value
-		end
-		print("[Saint] WalkSpeed", value)
+local swap
+swap = home:Button({
+	title = "Swap mode",
+	button = "Client",
+	callback = function()
+		local target = swap:GetButton() == "Client" and "Server" or "Client"
+		swap:SetButton(target)
+		print("[Saint] Mode is now " .. target)
 	end,
 })
 
-home:Slider({
-	title = "Transparency",
-	desc = "Decimals work too, this one shows two of them",
+home:Divider()
+
+local movement = home:Module({
+	title = "Movement",
+	desc = "Everything about how far and how fast you go",
+})
+
+movement:Toggle({
+	title = "Sprint",
+	value = true,
+	callback = function(state)
+		print("[Saint] Sprint " .. tostring(state))
+	end,
+})
+
+movement:Slider({
+	title = "WalkSpeed",
+	min = 16,
+	max = 500,
+	value = 80,
+	callback = function(number)
+		print("[Saint] WalkSpeed " .. number)
+	end,
+})
+
+movement:Dropdown({
+	title = "Style",
+	placeholder = "Pick a style",
+	options = { "Normal", "Bypass", "Silent" },
+	callback = function(option)
+		print("[Saint] Style " .. tostring(option))
+	end,
+})
+
+combat:Group("Aim")
+
+combat:Toggle({
+	title = "AimAssist",
+	desc = "Pulls your crosshair toward the nearest target",
+	value = true,
+	callback = function(state)
+		print("[Saint] AimAssist " .. tostring(state))
+	end,
+})
+
+combat:Dropdown({
+	title = "Target part",
+	options = { "Head", "Torso", "Closest" },
+	default = "Head",
+	callback = function(option)
+		print("[Saint] Target part " .. tostring(option))
+	end,
+})
+
+combat:Slider({
+	title = "FOV",
+	min = 0,
+	max = 360,
+	value = 90,
+	suffix = " deg",
+	callback = function(number)
+		print("[Saint] FOV " .. number)
+	end,
+})
+
+local silent = combat:Module({
+	title = "Silent aim",
+	desc = "Routes hits through a separate raycast so your camera never moves",
+})
+
+silent:Toggle({
+	title = "Enabled",
+	value = false,
+	callback = function(state)
+		print("[Saint] Silent " .. tostring(state))
+	end,
+})
+
+silent:Slider({
+	title = "Prediction",
 	min = 0,
 	max = 1,
 	decimals = 2,
-	value = 0,
-	callback = function(value)
-		print("[Saint] Transparency", value)
+	value = 0.35,
+	callback = function(number)
+		print("[Saint] Prediction " .. number)
 	end,
 })
 
-home:Section("Keybinds")
-
-home:Keybind({
-	title = "Toggle Menu",
-	desc = "Click the pill then press any key",
-	key = Enum.KeyCode.RightShift,
-	callback = function(key)
-		print("[Saint] bound", key.Name)
+silent:Keybind({
+	title = "Trigger",
+	key = Enum.KeyCode.Q,
+	mode = "hold",
+	callback = function(active)
+		print("[Saint] Trigger " .. tostring(active))
 	end,
 })
 
-home:Keybind({
-	title = "Panic Key",
-	desc = "Mouse buttons are allowed as well",
-	callback = function(key)
-		print("[Saint] panic bound to", key.Name)
-	end,
-})
+settings:Group("Interface")
 
-settings:Section("Text Input")
-
-local nameBox = settings:TextBox({
-	title = "Display Name",
-	desc = "Press enter to fire the callback",
-	placeholder = "Type your name...",
-	callback = function(text, enterPressed)
-		print("[Saint] text", text, "enter", enterPressed)
-	end,
-})
-
-settings:Button({
-	title = "Read The Box",
-	button = "Print",
-	desc = "Grabs the value without waiting for enter",
-	callback = function()
-		print("[Saint] box contains", nameBox:GetText())
-	end,
-})
-
-settings:Section("Options")
-settings:Divider()
-
-local mode = settings:Dropdown({
-	title = "Mode",
-	desc = "Picks a single option from the list",
-	options = { "Legit", "Rage", "Silent Aim", "Blatant", "Custom" },
-	default = "Legit",
-	placeholder = "Choose a mode...",
-	callback = function(option)
-		print("[Saint] mode", option)
-	end,
-})
-
-settings:Dropdown({
-	title = "Quality",
-	options = { "Low", "Medium", "High", "Ultra" },
-	placeholder = "Pick a quality...",
-	callback = function(option)
-		print("[Saint] quality", option)
-	end,
-})
-
-settings:Section("Toggles")
-
-local infinite = settings:Toggle({
-	title = "Infinite Jump",
-	desc = "No description needed but here is one anyway",
-	value = false,
-	callback = function(value)
-		print("[Saint] infinite jump", value)
+settings:TextBox({
+	title = "Profile",
+	placeholder = "profile name",
+	text = "default",
+	callback = function(text)
+		print("[Saint] Profile " .. text)
 	end,
 })
 
 settings:Toggle({
-	title = "Fullbright",
+	title = "Animations",
 	value = true,
-	callback = function(value)
-		local lighting = game:GetService("Lighting")
-		lighting.Brightness = value and 3 or 2
-		print("[Saint] fullbright", value)
+	callback = function(state)
+		print("[Saint] Animations " .. tostring(state))
 	end,
 })
 
-settings:Slider({
-	title = "Field Of View",
-	min = 20,
-	max = 120,
-	value = 70,
-	callback = function(value)
-		local camera = workspace.CurrentCamera
-		if camera then
-			camera.FieldOfView = value
-		end
-		print("[Saint] fov", value)
+settings:Toggle({
+	title = "Watermark",
+	desc = "Shows the fps counter in the corner",
+	value = false,
+	callback = function(state)
+		print("[Saint] Watermark " .. tostring(state))
 	end,
 })
 
 settings:Keybind({
-	title = "Middle Click",
-	key = Enum.UserInputType.MouseButton2,
-	callback = function(key)
-		print("[Saint] bound", key.Name)
+	title = "NoClip",
+	key = Enum.KeyCode.B,
+	callback = function(active)
+		print("[Saint] NoClip " .. tostring(active))
 	end,
 })
 
-settings:Section("Actions")
+settings:Divider()
 
 settings:Button({
-	title = "Reset Settings",
-	button = "Reset",
-	desc = "Puts every component back to its default",
+	title = "Save profile",
+	button = "Save",
 	callback = function()
-		infinite:SetValue(false)
-		mode:SetValue("Legit")
-		nameBox:SetText("")
-		print("[Saint] settings reset")
+		print("[Saint] Profile saved")
 	end,
 })
 
 settings:Button({
-	title = "Close Menu",
+	title = "Reset everything",
+	button = "Reset",
+	callback = function()
+		print("[Saint] Reset done")
+	end,
+})
+
+settings:Button({
+	title = "Unload",
 	button = "Close",
 	callback = function()
 		window:Close()
