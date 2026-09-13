@@ -1,4 +1,4 @@
-local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/saintdevzz/saint-ui/main/UILIB.lua"))()
+local UILib = loadstring(game:HttpGet("https://raw.githubusercontent.com/saintdevzz/saint-ui/main/UILIB.lua?v=" .. os.time()))()
 
 local window = UILib:Window({
 	title = "Saint",
