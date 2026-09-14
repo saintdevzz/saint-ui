@@ -1587,7 +1587,9 @@ function UILib:Window(config)
 				end
 			end
 		end
-		page._setOpen = setPageOpen
+		page._setOpen = function(v, entrance)
+			return setPageOpen(page, v, entrance)
+		end
 		entry.MouseEnter:Connect(function()
 			if not page.open then
 				tween(entry, { BackgroundTransparency = 0 }, 0.22)
