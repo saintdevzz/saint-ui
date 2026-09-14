@@ -331,8 +331,14 @@ local function optSlider(parent, order, cfg)
 	cfg = cfg or {}
 	local min = cfg.min or 0
 	local max = cfg.max or 100
+	local decimals = cfg.decimals or 0
+	local suffix = cfg.suffix or ""
 	local val = cfg.value or min
-	local f = optLabel(parent, order, (cfg.title or "Slider") .. "  " .. tostring(val), 40)
+	local title = cfg.title or "Slider"
+	local range = max - min
+	if range == 0 then range = 1 end
+	local f = optLabel(parent, order, title, 40)
+	local lbl = f:FindFirstChildOfClass("TextLabel")
 	local track = create("Frame", {
 		Size = UDim2.new(1, 0, 0, 4),
 		Position = UDim2.new(0, 0, 1, -8),
@@ -341,15 +347,91 @@ local function optSlider(parent, order, cfg)
 	}, f)
 	corner(track, 2)
 	local fill = create("Frame", {
-		Size = UDim2.new((val - min) / math.max(max - min, 1), 0, 1, 0),
+		Size = UDim2.new(0, 0, 1, 0),
 		BackgroundColor3 = TEXT,
 		BorderSizePixel = 0
 	}, track)
 	corner(fill, 2)
+	local knob = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(12, 12),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		BackgroundColor3 = TEXT,
+		BorderSizePixel = 0,
+		ZIndex = 3
+	}, track)
+	corner(knob, 6)
+	local hit = create("TextButton", {
+		Size = UDim2.new(1, 12, 0, 22),
+		Position = UDim2.new(0, -6, 0.5, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = 4
+	}, track)
+	local function quantize(raw)
+		if decimals > 0 then
+			local scale = 10 ^ decimals
+			return math.floor(raw * scale + 0.5) / scale
+		end
+		return math.floor(raw + 0.5)
+	end
+	local function render()
+		local text
+		if decimals > 0 then
+			text = string.format("%." .. decimals .. "f", val)
+		else
+			text = tostring(math.floor(val + 0.5))
+		end
+		if lbl then
+			lbl.Text = title .. "  " .. text .. suffix
+		end
+		local alpha = (val - min) / range
+		fill.Size = UDim2.new(alpha, 0, 1, 0)
+		knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+	end
+	local dragging = false
+	local function apply(inputX, fire)
+		local ap = track.AbsolutePosition
+		local size = track.AbsoluteSize
+		if size.X <= 0 then return end
+		local alpha = math.clamp((inputX - ap.X) / size.X, 0, 1)
+		val = math.clamp(quantize(min + range * alpha), min, max)
+		render()
+		if fire and cfg.callback then
+			cfg.callback(val)
+		end
+	end
+	hit.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			apply(input.Position.X, true)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if not dragging then return end
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			apply(input.Position.X, true)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			if dragging then
+				dragging = false
+				if cfg.callback then
+					cfg.callback(val)
+				end
+			end
+		end
+	end)
+	render()
 	return f
 end
-local function optDropdown(parent, order, cfg)
+local function optDropdown(parent, order, cfg, closers)
 	cfg = cfg or {}
+	local options = cfg.options or {}
+	local selected = cfg.default
 	local f = optLabel(parent, order, cfg.title or "Dropdown", 34)
 	local shell = create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -360,22 +442,157 @@ local function optDropdown(parent, order, cfg)
 		AutoButtonColor = false
 	}, f)
 	corner(shell, 5)
-	create("TextLabel", {
+	local label = create("TextLabel", {
 		Position = UDim2.fromOffset(8, 0),
 		Size = UDim2.new(1, -16, 1, 0),
 		BackgroundTransparency = 1,
 		FontFace = F_Reg,
 		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextColor3 = Color3.fromRGB(200, 200, 200),
-		Text = tostring(cfg.default or cfg.placeholder or "Select")
+		TextColor3 = selected and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(140, 140, 140),
+		Text = tostring(selected or cfg.placeholder or "Select")
 	}, shell)
+	local node = parent
+	while node and not node:IsA("ScreenGui") do
+		node = node.Parent
+	end
+	if not node then
+		return f
+	end
+	local list = create("Frame", {
+		Name = "DropdownList",
+		Size = UDim2.fromOffset(112, 0),
+		BackgroundColor3 = Color3.fromRGB(26, 26, 26),
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 60
+	}, node)
+	corner(list, 6)
+	create("UIStroke", { Color = STROKE, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, list)
+	create("UIScale", { Scale = 1 }, list)
+	create("UIPadding", {
+		PaddingTop = UDim.new(0, 5),
+		PaddingBottom = UDim.new(0, 5),
+		PaddingLeft = UDim.new(0, 5),
+		PaddingRight = UDim.new(0, 5)
+	}, list)
+	create("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }, list)
+	local entries = {}
+	local open = false
+	local function listHeight()
+		local visible = #options
+		if visible == 0 then visible = 1 end
+		return visible * 26 + math.max(visible - 1, 0) * 2 + 10
+	end
+	local function place()
+		local ap = shell.AbsolutePosition
+		local as = shell.AbsoluteSize
+		local h = listHeight()
+		local vp = Vector2.new(1920, 1080)
+		pcall(function()
+			if workspace.CurrentCamera then
+				vp = workspace.CurrentCamera.ViewportSize
+			end
+		end)
+		local x = ap.X
+		local y = ap.Y + as.Y + 4
+		if y + h > vp.Y - 8 then
+			y = ap.Y - h - 4
+		end
+		if x + 112 > vp.X - 8 then
+			x = vp.X - 120
+		end
+		if x < 8 then x = 8 end
+		if y < 8 then y = 8 end
+		list.Size = UDim2.fromOffset(112, h)
+		list.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
+	end
+	local function close()
+		if not open then return end
+		open = false
+		local sc = list:FindFirstChildOfClass("UIScale")
+		if sc then
+			tween(sc, { Scale = 0.96 }, 0.12)
+		end
+		task.delay(0.1, function()
+			if not open then
+				list.Visible = false
+			end
+		end)
+	end
+	local function paint()
+		for i, entry in ipairs(entries) do
+			if options[i] == selected then
+				entry.TextColor3 = Color3.fromRGB(255, 255, 255)
+				entry.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+			else
+				entry.TextColor3 = Color3.fromRGB(180, 180, 180)
+				entry.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+			end
+		end
+	end
+	local function choose(option)
+		selected = option
+		label.Text = tostring(option)
+		label.TextColor3 = Color3.fromRGB(200, 200, 200)
+		paint()
+		close()
+		if cfg.callback then
+			cfg.callback(option)
+		end
+	end
+	for i, option in ipairs(options) do
+		local entry = create("TextButton", {
+			Size = UDim2.new(1, 0, 0, 26),
+			BackgroundColor3 = Color3.fromRGB(26, 26, 26),
+			Text = tostring(option),
+			FontFace = F_Reg,
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = Color3.fromRGB(180, 180, 180),
+			AutoButtonColor = false,
+			LayoutOrder = i,
+			ZIndex = 61
+		}, list)
+		corner(entry, 4)
+		create("UIPadding", { PaddingLeft = UDim.new(0, 8) }, entry)
+		entry.MouseEnter:Connect(function()
+			tween(entry, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.15)
+		end)
+		entry.MouseLeave:Connect(function()
+			if options[i] ~= selected then
+				tween(entry, { BackgroundColor3 = Color3.fromRGB(26, 26, 26) }, 0.15)
+			end
+		end)
+		entry.MouseButton1Click:Connect(function()
+			choose(option)
+		end)
+		entries[i] = entry
+	end
+	paint()
 	shell.MouseEnter:Connect(function()
 		tween(shell, { BackgroundColor3 = Color3.fromRGB(54, 54, 54) }, 0.2)
 	end)
 	shell.MouseLeave:Connect(function()
 		tween(shell, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.2)
 	end)
+	shell.MouseButton1Click:Connect(function()
+		if open then
+			close()
+			return
+		end
+		open = true
+		place()
+		list.Visible = true
+		local sc = list:FindFirstChildOfClass("UIScale")
+		if sc then
+			sc.Scale = 0.94
+			tween(sc, { Scale = 1 }, 0.26, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		end
+	end)
+	if closers then
+		table.insert(closers, close)
+	end
 	return f
 end
 local function optButton(parent, order, cfg)
@@ -408,24 +625,70 @@ local function optButton(parent, order, cfg)
 end
 local function optKeybind(parent, order, cfg)
 	cfg = cfg or {}
+	local key = cfg.key
+	local listening = false
 	local f = optLabel(parent, order, cfg.title or "Keybind", 34)
 	local shell = create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.fromOffset(60, 22),
+		Size = UDim2.fromOffset(76, 22),
 		BackgroundColor3 = Color3.fromRGB(40, 40, 40),
 		FontFace = F_Reg,
 		TextSize = 12,
 		TextColor3 = Color3.fromRGB(200, 200, 200),
-		Text = cfg.key and cfg.key.Name or "None",
+		Text = key and key.Name or "None",
 		AutoButtonColor = false
 	}, f)
 	corner(shell, 5)
 	shell.MouseEnter:Connect(function()
-		tween(shell, { BackgroundColor3 = Color3.fromRGB(54, 54, 54) }, 0.2)
+		if not listening then
+			tween(shell, { BackgroundColor3 = Color3.fromRGB(54, 54, 54) }, 0.2)
+		end
 	end)
 	shell.MouseLeave:Connect(function()
-		tween(shell, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.2)
+		if not listening then
+			tween(shell, { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }, 0.2)
+		end
+	end)
+	shell.MouseButton1Click:Connect(function()
+		if listening then return end
+		listening = true
+		shell.Text = "Press a key..."
+		shell.TextColor3 = Color3.fromRGB(140, 140, 140)
+	end)
+	UserInputService.InputBegan:Connect(function(input, gpe)
+		if gpe then return end
+		if listening then
+			if input.UserInputType == Enum.UserInputType.Keyboard then
+				if input.KeyCode == Enum.KeyCode.Unknown then return end
+				key = input.KeyCode
+			elseif input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.MouseButton2
+				or input.UserInputType == Enum.UserInputType.MouseButton3 then
+				key = input.UserInputType
+			else
+				return
+			end
+			listening = false
+			shell.Text = key and (key.Name or tostring(key)) or "None"
+			shell.TextColor3 = Color3.fromRGB(200, 200, 200)
+			if cfg.callback then
+				cfg.callback(key)
+			end
+			return
+		end
+		if not key then return end
+		local matches
+		if typeof(key) == "EnumUserInputType" then
+			matches = input.UserInputType == key
+		else
+			matches = input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == key
+		end
+		if matches then
+			if cfg.callback then
+				cfg.callback(key)
+			end
+		end
 	end)
 	return f
 end
@@ -629,6 +892,11 @@ function UILib:Window(config)
 	end
 	local function closeAllSidePanels()
 		for _, p in ipairs(self.order) do
+			if p._floats then
+				for _, cl in ipairs(p._floats) do
+					cl()
+				end
+			end
 			if p.modules then
 				for _, m in ipairs(p.modules) do
 					if m.sidePanels then
@@ -828,6 +1096,7 @@ function UILib:Window(config)
 		page.list = catList
 		page._count = 0
 		page.modules = {}
+		page._floats = {}
 		page.open = false
 		page.window = self
 		function page:SetTag(t)
@@ -1010,7 +1279,6 @@ function UILib:Window(config)
 				optToggle(opts, mod._n + 1, cfg)
 				mod._n = mod._n + 1
 				revealChev()
-				setInline(true)
 				return mod
 			end
 			function mod:Slider(cfg)
@@ -1018,15 +1286,13 @@ function UILib:Window(config)
 				optSlider(opts, mod._n + 1, cfg)
 				mod._n = mod._n + 1
 				revealChev()
-				setInline(true)
 				return mod
 			end
 			function mod:Dropdown(cfg)
 				cfg = cfg or {}
-				optDropdown(opts, mod._n + 1, cfg)
+				optDropdown(opts, mod._n + 1, cfg, page._floats)
 				mod._n = mod._n + 1
 				revealChev()
-				setInline(true)
 				return mod
 			end
 			function mod:Button(cfg)
@@ -1034,7 +1300,6 @@ function UILib:Window(config)
 				optButton(opts, mod._n + 1, cfg)
 				mod._n = mod._n + 1
 				revealChev()
-				setInline(true)
 				return mod
 			end
 			function mod:Keybind(cfg)
@@ -1042,7 +1307,6 @@ function UILib:Window(config)
 				optKeybind(opts, mod._n + 1, cfg)
 				mod._n = mod._n + 1
 				revealChev()
-				setInline(true)
 				return mod
 			end
 			function mod:Panel(subTitle)
@@ -1274,6 +1538,9 @@ function UILib:Window(config)
 				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.22)
 				tween(p.entry, { BackgroundTransparency = 1 }, 0.22)
 				tintIcon(p.entryIcon, ICON_DIM, 0.22)
+				for _, cl in ipairs(p._floats) do
+					cl()
+				end
 				for _, m in ipairs(p.modules) do
 					m._sideOpen = false
 					for _, sp in ipairs(m.sidePanels) do
