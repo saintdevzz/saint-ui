@@ -1063,14 +1063,10 @@ function UILib:Window(config)
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			Padding = UDim.new(0, 2)
 		}, catList)
+		local modCount = 0
 		local function fitCat(animate)
 			if collapsed then return end
-			local h = CAT_HEAD_H + 12
-			for _, c in ipairs(catList:GetChildren()) do
-				if c:IsA("GuiObject") then
-					h = h + c.Size.Y.Offset + 2
-				end
-			end
+			local h = CAT_HEAD_H + 12 + modCount * (MOD_H + 2)
 			local target = UDim2.fromOffset(CAT_W, h)
 			if animate then
 				tween(cat, { Size = target }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -1512,6 +1508,7 @@ function UILib:Window(config)
 					mc.callback(enabled)
 				end
 			end)
+			modCount = modCount + 1
 			fitCat(false)
 			table.insert(page.modules, mod)
 			return mod
