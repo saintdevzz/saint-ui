@@ -1159,6 +1159,7 @@ function UILib:Window(config)
 				Name = mname,
 				Size = UDim2.new(1, 0, 0, MOD_H),
 				BackgroundTransparency = 1,
+				ClipsDescendants = true,
 				LayoutOrder = page._count * 10
 			}, catList)
 			local row = create("TextButton", {
