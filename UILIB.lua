@@ -1519,6 +1519,26 @@ function UILib:Window(config)
 		local function setPageOpen(p, v, entrance)
 			p.open = v ~= false
 			if p.open then
+				for _, other in ipairs(self.order) do
+					if other ~= p and other.open then
+						other.open = false
+						other.panel.Visible = false
+						tween(other.titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.22)
+						tween(other.entry, { BackgroundTransparency = 1 }, 0.22)
+						tintIcon(other.entryIcon, ICON_DIM, 0.22)
+						for _, cl in ipairs(other._floats) do
+							cl()
+						end
+						for _, m in ipairs(other.modules) do
+							m._sideOpen = false
+							for _, sp in ipairs(m.sidePanels) do
+								if sp.frame then
+									sp.frame.Visible = false
+								end
+							end
+						end
+					end
+				end
 				p.panel.Visible = true
 				pop(p.panel, 0.96)
 				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
