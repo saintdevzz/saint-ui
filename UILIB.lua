@@ -74,7 +74,7 @@ local function pop(frame, s)
 	sc.Scale = s or 0.94
 	tween(sc, { Scale = 1 }, 0.34, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 end
-local function dragify(handle, frame)
+local function dragify(handle, frame, onDrag)
 	local dragging = false
 	local sPos, sInput
 	handle.InputBegan:Connect(function(input)
@@ -82,6 +82,9 @@ local function dragify(handle, frame)
 			dragging = true
 			sPos = frame.Position
 			sInput = input.Position
+			if onDrag then
+				onDrag()
+			end
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragging = false
@@ -902,6 +905,35 @@ function UILib:Window(config)
 			end
 		end
 	end
+	local function getViewport()
+		local vp = Vector2.new(1920, 1080)
+		pcall(function()
+			if workspace.CurrentCamera then
+				vp = workspace.CurrentCamera.ViewportSize
+			end
+		end)
+		return vp
+	end
+	local function placePanels()
+		local vp = getViewport()
+		local baseX = vp.X * 0.5 + 6
+		local baseY = vp.Y * 0.5 - 300
+		local perRow = math.floor((vp.X - baseX - 8 + 10) / (CAT_W + 10))
+		if perRow < 1 then
+			perRow = 1
+		end
+		local n = 0
+		for _, pg in ipairs(self.order) do
+			if pg.open then
+				if not pg._moved or not pg._moved.value then
+					local col = n % perRow
+					local row = math.floor(n / perRow)
+					tween(pg.panel, { Position = UDim2.fromOffset(baseX + col * (CAT_W + 10), baseY + row * 34) }, 0.22)
+				end
+				n = n + 1
+			end
+		end
+	end
 	function self:Page(nameOrConfig, iconOverride)
 		local cfg = {}
 		if type(nameOrConfig) == "table" then
@@ -999,6 +1031,7 @@ function UILib:Window(config)
 			Name = "Head",
 			Size = UDim2.new(1, 0, 0, CAT_HEAD_H),
 			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
 			Text = "",
 			AutoButtonColor = false
 		}, cat)
@@ -1034,7 +1067,10 @@ function UILib:Window(config)
 			BackgroundColor3 = DIV,
 			BorderSizePixel = 0
 		}, cat)
-		dragify(catHead, cat)
+		local moved = { value = false }
+		dragify(catHead, cat, function()
+			moved.value = true
+		end)
 		local collapsed = false
 		local catList = create("Frame", {
 			Name = "Mods",
@@ -1087,6 +1123,7 @@ function UILib:Window(config)
 		page._floats = {}
 		page.open = false
 		page.window = self
+		page._moved = moved
 		function page:SetTag(t)
 			if pillLbl then
 				pillLbl.Text = tostring(t)
@@ -1150,6 +1187,7 @@ function UILib:Window(config)
 				Position = UDim2.new(1, -10, 0.5, 0),
 				Size = UDim2.fromOffset(20, 24),
 				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
 				Text = "",
 				AutoButtonColor = false,
 				Visible = false
@@ -1163,6 +1201,7 @@ function UILib:Window(config)
 				Position = UDim2.new(1, -10, 0.5, 0),
 				Size = UDim2.fromOffset(22, 24),
 				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
 				Text = "",
 				AutoButtonColor = false,
 				Visible = false
@@ -1255,7 +1294,6 @@ function UILib:Window(config)
 				mod._hasOptions = true
 				if not chevBtn.Visible then
 					chevBtn.Visible = true
-					tween(chevBtn, { BackgroundTransparency = 0 }, 0.2)
 				end
 				layoutRowBtns(true)
 			end
@@ -1510,28 +1548,9 @@ function UILib:Window(config)
 		local function setPageOpen(p, v, entrance)
 			p.open = v ~= false
 			if p.open then
-				for _, other in ipairs(self.order) do
-					if other ~= p and other.open then
-						other.open = false
-						other.panel.Visible = false
-						tween(other.titleLbl, { TextColor3 = Color3.fromRGB(205, 205, 205) }, 0.22)
-						tween(other.entry, { BackgroundTransparency = 1 }, 0.22)
-						tintIcon(other.entryIcon, ICON_DIM, 0.22)
-						for _, cl in ipairs(other._floats) do
-							cl()
-						end
-						for _, m in ipairs(other.modules) do
-							m._sideOpen = false
-							for _, sp in ipairs(m.sidePanels) do
-								if sp.frame then
-									sp.frame.Visible = false
-								end
-							end
-						end
-					end
-				end
 				p.panel.Visible = true
 				fitCat(false)
+				placePanels()
 				pop(p.panel, 0.96)
 				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
 				tween(p.entry, { BackgroundTransparency = 0 }, 0.22)
@@ -1579,6 +1598,7 @@ function UILib:Window(config)
 						end
 					end
 				end
+				placePanels()
 			end
 		end
 		page._setOpen = function(v, entrance)
