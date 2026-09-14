@@ -159,17 +159,6 @@ local function diag(parent, cx, cy, len, thick, color, rot)
 		BorderSizePixel = 0
 	}, parent)
 end
-local function drawChevron(parent, color)
-	local h = create("Frame", {
-		Name = "Chev",
-		Size = UDim2.fromOffset(12, 12),
-		BackgroundTransparency = 1
-	}, parent)
-	diag(h, 6, 4, 7, 1.6, color or Color3.fromRGB(95, 95, 95), -45)
-	local b = diag(h, 6, 8, 7, 1.6, color or Color3.fromRGB(95, 95, 95), 45)
-	b.Position = UDim2.fromOffset(6, 8)
-	return h
-end
 local function drawCaret(parent, color)
 	local h = create("Frame", {
 		Name = "Caret",
@@ -1064,9 +1053,10 @@ function UILib:Window(config)
 			Padding = UDim.new(0, 2)
 		}, catList)
 		local modCount = 0
+		local totalModH = 0
 		local function fitCat(animate)
 			if collapsed then return end
-			local h = CAT_HEAD_H + 12 + modCount * (MOD_H + 2)
+			local h = CAT_HEAD_H + 12 + totalModH + modCount * 2
 			local target = UDim2.fromOffset(CAT_W, h)
 			if animate then
 				tween(cat, { Size = target }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -1164,9 +1154,10 @@ function UILib:Window(config)
 				AutoButtonColor = false,
 				Visible = false
 			}, row)
-			local chevIcon = drawChevron(chevBtn, Color3.fromRGB(125, 125, 125))
+			local chevIcon = drawCaret(chevBtn, Color3.fromRGB(120, 120, 120))
 			chevIcon.AnchorPoint = Vector2.new(0.5, 0.5)
 			chevIcon.Position = UDim2.fromScale(0.5, 0.5)
+			chevIcon.Rotation = 180
 			local dotsBtn = create("TextButton", {
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -10, 0.5, 0),
@@ -1208,19 +1199,22 @@ function UILib:Window(config)
 				PaddingRight = UDim.new(0, 8)
 			}, opts)
 			local inlineOpen = false
+			local wrapH = MOD_H
 			local function refreshWrap(animate)
 				local target
 				if inlineOpen then
-					target = UDim2.new(1, 0, 0, (MOD_H - 4) + opts.AbsoluteSize.Y + 8)
+					target = (MOD_H - 4) + opts.AbsoluteSize.Y + 8
 				else
-					target = UDim2.new(1, 0, 0, MOD_H)
+					target = MOD_H
 				end
+				totalModH = totalModH + (target - wrapH)
+				wrapH = target
 				if animate then
-					tween(wrap, { Size = target }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+					tween(wrap, { Size = UDim2.new(1, 0, 0, target) }, 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 				else
-					wrap.Size = target
+					wrap.Size = UDim2.new(1, 0, 0, target)
 				end
-				task.defer(function() fitCat(true) end)
+				fitCat(animate)
 			end
 			opts:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() refreshWrap(false) end)
 			local function setInline(v)
@@ -1229,10 +1223,10 @@ function UILib:Window(config)
 					opts.Visible = true
 					opts.BackgroundTransparency = 1
 					tween(opts, { BackgroundTransparency = 0 }, 0.28)
-					tween(chevIcon, { Rotation = 90 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+					tween(chevIcon, { Rotation = 0 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 				else
 					tween(opts, { BackgroundTransparency = 1 }, 0.2)
-					tween(chevIcon, { Rotation = 0 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+					tween(chevIcon, { Rotation = 180 }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 					task.delay(0.2, function()
 						if not inlineOpen then
 							opts.Visible = false
@@ -1261,7 +1255,6 @@ function UILib:Window(config)
 				mod._hasOptions = true
 				if not chevBtn.Visible then
 					chevBtn.Visible = true
-					chevIcon.Rotation = 0
 					tween(chevBtn, { BackgroundTransparency = 0 }, 0.2)
 				end
 				layoutRowBtns(true)
@@ -1509,6 +1502,7 @@ function UILib:Window(config)
 				end
 			end)
 			modCount = modCount + 1
+			totalModH = totalModH + MOD_H
 			fitCat(false)
 			table.insert(page.modules, mod)
 			return mod
