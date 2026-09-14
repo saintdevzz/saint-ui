@@ -963,10 +963,12 @@ function UILib:Window(config)
 		local chevHolder = create("Frame", {
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -14, 0.5, 0),
-			Size = UDim2.fromOffset(12, 12),
+			Size = UDim2.fromOffset(16, 16),
 			BackgroundTransparency = 1
 		}, entry)
-		drawChevron(chevHolder, Color3.fromRGB(95, 95, 95))
+		local navDots = dotsIndicator(chevHolder, Color3.fromRGB(95, 95, 95))
+		navDots.AnchorPoint = Vector2.new(0.5, 0.5)
+		navDots.Position = UDim2.fromScale(0.5, 0.5)
 		create("Frame", {
 			Size = UDim2.new(1, 0, 0, 1),
 			Position = UDim2.new(0, 0, 1, -1),
@@ -1260,6 +1262,7 @@ function UILib:Window(config)
 				end
 			end
 			local function revealChev()
+				mod._hasOptions = true
 				if not chevBtn.Visible then
 					chevBtn.Visible = true
 					chevIcon.Rotation = 0
@@ -1308,6 +1311,19 @@ function UILib:Window(config)
 				mod._n = mod._n + 1
 				revealChev()
 				return mod
+			end
+			function mod:Expand()
+				if mod._hasOptions then
+					setInline(true)
+				end
+				return mod
+			end
+			function mod:Collapse()
+				setInline(false)
+				return mod
+			end
+			function mod:IsExpanded()
+				return inlineOpen
 			end
 			function mod:Panel(subTitle)
 				local st = subTitle or (mname .. " Settings")
@@ -1482,6 +1498,10 @@ function UILib:Window(config)
 			dotsBtn.MouseButton1Click:Connect(toggleSide)
 			local enabled = false
 			row.MouseButton1Click:Connect(function()
+				if mod._hasOptions then
+					setInline(not inlineOpen)
+					return
+				end
 				enabled = not enabled
 				if enabled then
 					tween(t, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.2)
