@@ -1540,6 +1540,7 @@ function UILib:Window(config)
 					end
 				end
 				p.panel.Visible = true
+				fitCat(false)
 				pop(p.panel, 0.96)
 				tween(p.titleLbl, { TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
 				tween(p.entry, { BackgroundTransparency = 0 }, 0.22)
@@ -1558,14 +1559,12 @@ function UILib:Window(config)
 										break
 									end
 								end
-								r.BackgroundTransparency = 1
 								if lbl then
-									lbl.TextTransparency = 1
 									lbl.Position = UDim2.fromOffset(26, 0)
 									local dly = idx * 0.035
 									task.delay(dly, function()
 										if lbl and lbl.Parent then
-											tween(lbl, { TextTransparency = 0, Position = UDim2.fromOffset(16, 0) }, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+											tween(lbl, { Position = UDim2.fromOffset(16, 0) }, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 										end
 									end)
 								end
